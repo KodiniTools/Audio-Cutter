@@ -10,6 +10,9 @@ export interface WaveformDrawOptions {
   regionEnd: number
   /** Playhead-Position [0..1] oder null. */
   playhead: number | null
+  /** Sichtbares Fenster [0..1] der Gesamtlänge (Zoom). Default 0..1 = alles. */
+  viewStart?: number
+  viewEnd?: number
   colors: {
     waveform: string
     regionFill: string
@@ -43,6 +46,13 @@ export function useWaveform() {
     const h = cssHeight
     const mid = h / 2
 
+    // Sichtfenster (Zoom): Default = ganze Datei.
+    const viewStart = Math.max(0, Math.min(1, opts.viewStart ?? 0))
+    const viewEnd = Math.max(viewStart, Math.min(1, opts.viewEnd ?? 1))
+    const span = Math.max(1e-9, viewEnd - viewStart)
+    // Absoluter Frac [0..1] -> X-Pixel im aktuellen Fenster.
+    const toX = (frac: number): number => ((frac - viewStart) / span) * w
+
     ctx.clearRect(0, 0, w, h)
     ctx.fillStyle = opts.colors.background
     ctx.fillRect(0, 0, w, h)
@@ -55,9 +65,12 @@ export function useWaveform() {
     ctx.lineTo(w, mid)
     ctx.stroke()
 
-    // Waveform
+    // Waveform – nur den sichtbaren Sample-Ausschnitt zeichnen (Zoom = Beats sichtbar).
     if (channel && channel.length > 0) {
-      const peaks = computePeaks(channel, w)
+      const from = Math.max(0, Math.floor(viewStart * channel.length))
+      const to = Math.min(channel.length, Math.ceil(viewEnd * channel.length))
+      const slice = to > from ? channel.subarray(from, to) : channel
+      const peaks = computePeaks(slice, w)
       ctx.strokeStyle = opts.colors.waveform
       ctx.lineWidth = 1
       ctx.beginPath()
@@ -71,23 +84,32 @@ export function useWaveform() {
       ctx.stroke()
     }
 
-    // Auswahlbereich
-    const xStart = Math.round(opts.regionStart * w)
-    const xEnd = Math.round(opts.regionEnd * w)
-    ctx.fillStyle = opts.colors.regionFill
-    ctx.fillRect(xStart, 0, Math.max(1, xEnd - xStart), h)
+    // Auswahlbereich (auf das sichtbare Fenster geclippt).
+    const xStart = Math.max(0, Math.min(w, toX(opts.regionStart)))
+    const xEnd = Math.max(0, Math.min(w, toX(opts.regionEnd)))
+    if (xEnd > xStart) {
+      ctx.fillStyle = opts.colors.regionFill
+      ctx.fillRect(xStart, 0, Math.max(1, xEnd - xStart), h)
+    }
     ctx.strokeStyle = opts.colors.regionBorder
     ctx.lineWidth = 2
     ctx.beginPath()
-    ctx.moveTo(xStart + 0.5, 0)
-    ctx.lineTo(xStart + 0.5, h)
-    ctx.moveTo(xEnd - 0.5, 0)
-    ctx.lineTo(xEnd - 0.5, h)
+    // Randlinien nur zeichnen, wenn der jeweilige Rand im Fenster liegt.
+    if (opts.regionStart >= viewStart && opts.regionStart <= viewEnd) {
+      const xs = toX(opts.regionStart)
+      ctx.moveTo(xs + 0.5, 0)
+      ctx.lineTo(xs + 0.5, h)
+    }
+    if (opts.regionEnd >= viewStart && opts.regionEnd <= viewEnd) {
+      const xe = toX(opts.regionEnd)
+      ctx.moveTo(xe - 0.5, 0)
+      ctx.lineTo(xe - 0.5, h)
+    }
     ctx.stroke()
 
-    // Playhead
-    if (opts.playhead !== null) {
-      const xp = Math.round(opts.playhead * w)
+    // Playhead (nur wenn im Fenster sichtbar).
+    if (opts.playhead !== null && opts.playhead >= viewStart && opts.playhead <= viewEnd) {
+      const xp = toX(opts.playhead)
       ctx.strokeStyle = opts.colors.playhead
       ctx.lineWidth = 1.5
       ctx.beginPath()
