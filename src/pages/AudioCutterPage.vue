@@ -25,11 +25,19 @@ let abortController: AbortController | null = null
 type PlayState = 'stopped' | 'playing' | 'paused'
 const playState = ref<PlayState>('stopped')
 const pausedMs = ref(0)
+/** Vom Nutzer per Klick gesetzter Abspielpunkt (ms); null = ab Auswahlanfang. */
+const playCursorMs = ref<number | null>(null)
 let player: RegionPlayer | null = null
 
-function setPlayheadMs(ms: number | null, follow = false): void {
+function setPlayheadMs(ms: number | null): void {
   const d = store.durationMs
-  waveformRef.value?.setPlayhead(ms !== null && d > 0 ? ms / d : null, follow)
+  waveformRef.value?.setPlayhead(ms !== null && d > 0 ? ms / d : null)
+}
+
+/** Klick in die Waveform: Abspielpunkt setzen (unabhaengig von der Wiedergabe). */
+function onSeek(ms: number): void {
+  playCursorMs.value = ms
+  if (playState.value !== 'playing') setPlayheadMs(ms)
 }
 
 const activeLocale = computed<AppLocale>(() => i18n.global.locale.value)
@@ -48,6 +56,7 @@ function toMessage(e: unknown, fallbackKey: string): string {
 
 async function onFile(file: File): Promise<void> {
   store.reset()
+  playCursorMs.value = null
   store.setStatus('decoding')
   try {
     const { meta: m, decoded: d } = await engine.decode(file)
@@ -121,16 +130,24 @@ function onPlay(): void {
     playState.value = 'playing'
     return
   }
-  // Frisch starten.
+  // Frisch starten – ab dem vom Nutzer gewaehlten Abspielpunkt (sonst Auswahlanfang),
+  // bis zum Ende der Datei (freies Vorhoeren, unabhaengig von der Auswahl).
   player?.stop()
-  player = engine.createRegionPlayer(decoded.value, region.value, {
-    onTime: (ms) => setPlayheadMs(ms, true),
-    onEnded: () => {
-      playState.value = 'stopped'
-      player = null
-      setPlayheadMs(null)
+  const dur = store.durationMs
+  const cursor = playCursorMs.value
+  const startMs = cursor !== null ? Math.max(0, Math.min(cursor, dur)) : region.value.startMs
+  player = engine.createRegionPlayer(
+    decoded.value,
+    { startMs, endMs: dur },
+    {
+      onTime: (ms) => setPlayheadMs(ms),
+      onEnded: () => {
+        playState.value = 'stopped'
+        player = null
+        setPlayheadMs(playCursorMs.value)
+      },
     },
-  })
+  )
   playState.value = 'playing'
 }
 
@@ -138,14 +155,15 @@ function onPause(): void {
   if (!player || playState.value !== 'playing') return
   pausedMs.value = player.pause()
   playState.value = 'paused'
-  setPlayheadMs(pausedMs.value, true)
+  setPlayheadMs(pausedMs.value)
 }
 
 function onStopPlayback(): void {
   player?.stop()
   player = null
   playState.value = 'stopped'
-  setPlayheadMs(null)
+  // Abspielpunkt sichtbar lassen (dort startet die naechste Wiedergabe).
+  setPlayheadMs(playCursorMs.value)
 }
 
 /** Pausierte Position als Anfang bzw. Ende der Auswahl übernehmen. */
@@ -200,7 +218,7 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <WaveformEditor ref="waveformRef" />
+      <WaveformEditor ref="waveformRef" @seek="onSeek" />
 
       <div class="flex flex-col items-center gap-3">
         <div class="flex items-center gap-3">

@@ -11,6 +11,9 @@ const store = useAudioCutterStore()
 const { decoded, region, durationMs } = storeToRefs(store)
 const { draw } = useWaveform()
 
+/** Der Nutzer hat per Klick einen Abspielpunkt (ms) gewaehlt. */
+const emit = defineEmits<{ (e: 'seek', ms: number): void }>()
+
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const playhead = ref<number | null>(null)
 
@@ -18,6 +21,8 @@ const playhead = ref<number | null>(null)
 const ZOOM_STEP = 1.6
 const zoom = ref(1) // 1 = ganze Datei
 const viewCenterFrac = ref(0.5) // Mitte des sichtbaren Fensters [0..1]
+/** Optional: Sichtfenster folgt dem Marker (Standard: aus -> Ansicht bleibt ruhig). */
+const followMarker = ref(false)
 const win = computed(() => viewWindow(zoom.value, viewCenterFrac.value))
 const zoomLabel = computed(() => `${Math.round(zoom.value * 10) / 10}×`)
 const canZoomOut = computed(() => zoom.value > 1.001)
@@ -143,22 +148,18 @@ function onPointerMove(e: PointerEvent): void {
   // Anker + aktuelle Position -> setRegion sortiert selbst (Ziehen in beide Richtungen).
   else if (dragging.value === 'new') {
     if (moved.value) store.setRegion(anchorMs.value, ms)
-  } else if (store.hasAudio) {
-    playhead.value = durationMs.value > 0 ? ms / durationMs.value : null
   }
 }
 
 function onPointerUp(e: PointerEvent): void {
-  if (dragging.value === 'new' && !moved.value) {
-    // Reiner Klick: Auswahl unveraendert lassen, nur den Playhead setzen.
-    playhead.value = durationMs.value > 0 ? xToMs(e.clientX) / durationMs.value : null
+  if (dragging.value === 'new' && !moved.value && store.hasAudio) {
+    // Reiner Klick: Abspielpunkt setzen (Marker) und den Eltern-Container informieren.
+    const ms = xToMs(e.clientX)
+    playhead.value = durationMs.value > 0 ? ms / durationMs.value : null
+    emit('seek', ms)
   }
   dragging.value = null
   canvasRef.value?.releasePointerCapture(e.pointerId)
-}
-
-function onLeave(): void {
-  if (!dragging.value) playhead.value = null
 }
 
 let ro: ResizeObserver | null = null
@@ -178,10 +179,10 @@ onMounted(() => {
 onBeforeUnmount(() => ro?.disconnect())
 
 defineExpose({
-  // follow=true -> Sichtfenster folgt dem Marker (Wiedergabe/Pause).
-  setPlayhead: (frac: number | null, follow = false) => {
+  // Sichtfenster folgt dem Marker nur, wenn "Marker folgen" aktiv ist (Standard: aus).
+  setPlayhead: (frac: number | null) => {
     playhead.value = frac
-    if (follow && frac !== null) viewCenterFrac.value = frac
+    if (followMarker.value && frac !== null) viewCenterFrac.value = frac
   },
 })
 </script>
@@ -189,7 +190,25 @@ defineExpose({
 <template>
   <div class="w-full">
     <!-- Zoom-Toolbar -->
-    <div class="mb-2 flex items-center justify-end gap-1">
+    <div class="mb-2 flex items-center justify-between gap-1">
+      <!-- Optional: Sichtfenster folgt dem Marker (Standard aus) -->
+      <button
+        class="flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors"
+        :class="followMarker
+          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
+          : 'border-neutral-700 text-neutral-400 hover:border-emerald-500 hover:text-emerald-300'"
+        :aria-pressed="followMarker"
+        :title="t('waveform.followMarker')"
+        @click="followMarker = !followMarker"
+      >
+        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" />
+          <path stroke-linecap="round" d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+        </svg>
+        {{ t('waveform.followMarker') }}
+      </button>
+
+      <div class="flex items-center gap-1">
       <button
         class="flex h-8 w-8 items-center justify-center rounded-md border border-neutral-700 text-neutral-300 transition-colors hover:border-emerald-500 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-700 disabled:hover:text-neutral-300"
         :title="t('waveform.zoomOut')"
@@ -222,6 +241,7 @@ defineExpose({
       >
         1:1
       </button>
+      </div>
     </div>
 
     <canvas
@@ -230,7 +250,6 @@ defineExpose({
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
-      @pointerleave="onLeave"
       @wheel.prevent="onWheel"
     ></canvas>
     <p class="mt-2 text-center text-xs text-neutral-500">
