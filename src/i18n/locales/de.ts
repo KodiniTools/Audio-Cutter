@@ -37,7 +37,7 @@ export default {
     pause: 'Pause',
     resume: 'Fortsetzen',
     stop: 'Stopp',
-    pausedAt: 'Pausiert bei',
+    cursorAt: 'Cursor bei',
     setStart: 'Als Anfang',
     setEnd: 'Als Ende',
   },

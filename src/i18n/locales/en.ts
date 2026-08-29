@@ -37,7 +37,7 @@ const en: MessageSchema = {
     pause: 'Pause',
     resume: 'Resume',
     stop: 'Stop',
-    pausedAt: 'Paused at',
+    cursorAt: 'Cursor at',
     setStart: 'As start',
     setEnd: 'As end',
   },
