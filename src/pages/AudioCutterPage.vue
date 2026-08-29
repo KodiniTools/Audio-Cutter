@@ -30,10 +30,44 @@ const playState = ref<PlayState>('stopped')
  * Wird per Klick (onSeek) und beim Pausieren aktualisiert.
  */
 const cursorMs = ref<number | null>(null)
+/** true, solange die Vorschau der Auswahl laeuft (fuer Button-Zustand). */
+const previewing = ref(false)
 let player: RegionPlayer | null = null
+/** Endgrenze der aktuellen Wiedergabe (ms) – fuer Live-Seek beibehalten. */
+let playEndMs = 0
 
 /** Auswahl-Uebernahme moeglich, sobald ein Cursor steht und nicht gespielt wird. */
 const canApplyCursor = computed(() => cursorMs.value !== null && playState.value !== 'playing')
+
+/**
+ * Startet die Wiedergabe von startMs bis endMs (frischer Player).
+ * @param preview  true = Vorschau der Auswahl (Button-Zustand).
+ */
+function startPlayback(startMs: number, endMs: number, preview = false): void {
+  if (!decoded.value) return
+  player?.stop()
+  const dur = store.durationMs
+  const s = Math.max(0, Math.min(startMs, dur))
+  const e = Math.max(s, Math.min(endMs, dur))
+  playEndMs = e
+  previewing.value = preview
+  cursorMs.value = s
+  setPlayheadMs(s)
+  player = engine.createRegionPlayer(
+    decoded.value,
+    { startMs: s, endMs: e },
+    {
+      onTime: (ms) => setPlayheadMs(ms, { follow: true }),
+      onEnded: () => {
+        playState.value = 'stopped'
+        previewing.value = false
+        player = null
+        setPlayheadMs(cursorMs.value)
+      },
+    },
+  )
+  playState.value = 'playing'
+}
 
 function setPlayheadMs(
   ms: number | null,
@@ -43,16 +77,22 @@ function setPlayheadMs(
   waveformRef.value?.setPlayhead(ms !== null && d > 0 ? ms / d : null, opts)
 }
 
-/** Cursor manuell verschieben. Verwirft einen pausierten Player, damit das
- *  naechste Play am NEUEN Cursor startet (nicht an der Pausenstelle weiterspielt). */
+/** Cursor manuell verschieben.
+ *  - Waehrend der Wiedergabe: sofort ab dem neuen Punkt weiterspielen (Live-Seek).
+ *  - Bei Pause: pausierten Player verwerfen -> naechstes Play startet am neuen Cursor.
+ *  - Gestoppt: nur Cursor/Marker setzen. */
 function moveCursor(ms: number, ensure: boolean): void {
+  if (playState.value === 'playing') {
+    startPlayback(ms, playEndMs, previewing.value)
+    return
+  }
   cursorMs.value = ms
   if (playState.value === 'paused') {
     player?.stop()
     player = null
     playState.value = 'stopped'
   }
-  if (playState.value !== 'playing') setPlayheadMs(ms, { ensure })
+  setPlayheadMs(ms, { ensure })
 }
 
 /** Klick in die Waveform: Cursor setzen; Ansicht bleibt ruhig (Klick ist im Fenster). */
@@ -155,25 +195,15 @@ function onPlay(): void {
     playState.value = 'playing'
     return
   }
-  // Frisch starten – ab dem Cursor (sonst Auswahlanfang), bis Dateiende
-  // (freies Vorhoeren, unabhaengig von der Auswahl).
-  player?.stop()
-  const dur = store.durationMs
-  const cursor = cursorMs.value
-  const startMs = cursor !== null ? Math.max(0, Math.min(cursor, dur)) : region.value.startMs
-  player = engine.createRegionPlayer(
-    decoded.value,
-    { startMs, endMs: dur },
-    {
-      onTime: (ms) => setPlayheadMs(ms, { follow: true }),
-      onEnded: () => {
-        playState.value = 'stopped'
-        player = null
-        setPlayheadMs(cursorMs.value)
-      },
-    },
-  )
-  playState.value = 'playing'
+  // Frisch ab Cursor (sonst Auswahlanfang) bis Dateiende (freies Vorhoeren).
+  const startMs = cursorMs.value !== null ? cursorMs.value : region.value.startMs
+  startPlayback(startMs, store.durationMs, false)
+}
+
+/** Vorschau: nur den markierten Ausschnitt abspielen (hoeren + sehen). */
+function onPreview(): void {
+  if (!decoded.value) return
+  startPlayback(region.value.startMs, region.value.endMs, true)
 }
 
 function onPause(): void {
@@ -187,8 +217,10 @@ function onStopPlayback(): void {
   player?.stop()
   player = null
   playState.value = 'stopped'
-  // Cursor sichtbar lassen (dort startet die naechste Wiedergabe).
-  setPlayheadMs(cursorMs.value)
+  previewing.value = false
+  // Cursor an den Track-Anfang (0:00) zuruecksetzen und dort ruhen lassen.
+  cursorMs.value = 0
+  setPlayheadMs(0)
 }
 
 /** Aktuelle Cursor-Position als Anfang bzw. Ende der Auswahl übernehmen. */
@@ -290,6 +322,22 @@ onBeforeUnmount(() => {
             <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
               <rect x="6" y="6" width="12" height="12" rx="1.5" />
             </svg>
+          </button>
+          <!-- Vorschau der Auswahl (markierten Ausschnitt hoeren + sehen) -->
+          <button
+            class="flex h-12 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+            :class="previewing
+              ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
+              : 'border-neutral-700 text-neutral-200 hover:border-emerald-500 hover:text-emerald-300'"
+            :title="t('player.preview')"
+            :aria-label="t('player.preview')"
+            :disabled="store.selectedDurationMs <= 0"
+            @click="onPreview"
+          >
+            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
+              <path d="M5 4v16M8 5v14l10-7z" />
+            </svg>
+            {{ t('player.preview') }}
           </button>
         </div>
 
