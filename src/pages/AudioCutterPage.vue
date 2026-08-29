@@ -35,15 +35,24 @@ let player: RegionPlayer | null = null
 /** Auswahl-Uebernahme moeglich, sobald ein Cursor steht und nicht gespielt wird. */
 const canApplyCursor = computed(() => cursorMs.value !== null && playState.value !== 'playing')
 
-function setPlayheadMs(ms: number | null, center = false): void {
+function setPlayheadMs(
+  ms: number | null,
+  opts: { follow?: boolean; ensure?: boolean } = {},
+): void {
   const d = store.durationMs
-  waveformRef.value?.setPlayhead(ms !== null && d > 0 ? ms / d : null, center)
+  waveformRef.value?.setPlayhead(ms !== null && d > 0 ? ms / d : null, opts)
 }
 
-/** Klick in die Waveform: Cursor-/Abspielpunkt setzen (auch waehrend Pause). */
+/** Klick in die Waveform: Cursor setzen; Ansicht bleibt ruhig (Klick ist im Fenster). */
 function onSeek(ms: number): void {
   cursorMs.value = ms
   if (playState.value !== 'playing') setPlayheadMs(ms)
+}
+
+/** Seek aus Zahlenfeldern/Spinnern: Cursor ggf. ins Sichtfenster holen. */
+function onSeekReveal(ms: number): void {
+  cursorMs.value = ms
+  if (playState.value !== 'playing') setPlayheadMs(ms, { ensure: true })
 }
 
 const activeLocale = computed<AppLocale>(() => i18n.global.locale.value)
@@ -146,7 +155,7 @@ function onPlay(): void {
     decoded.value,
     { startMs, endMs: dur },
     {
-      onTime: (ms) => setPlayheadMs(ms, true),
+      onTime: (ms) => setPlayheadMs(ms, { follow: true }),
       onEnded: () => {
         playState.value = 'stopped'
         player = null
@@ -161,7 +170,7 @@ function onPause(): void {
   if (!player || playState.value !== 'playing') return
   cursorMs.value = player.pause()
   playState.value = 'paused'
-  setPlayheadMs(cursorMs.value, true)
+  setPlayheadMs(cursorMs.value, { follow: true })
 }
 
 function onStopPlayback(): void {
@@ -298,7 +307,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <TimeControls @seek="onSeek" />
+      <TimeControls @seek="onSeekReveal" />
 
       <ExportPanel @process="onProcess" @cancel="onCancel" @download="onDownload" />
     </div>
