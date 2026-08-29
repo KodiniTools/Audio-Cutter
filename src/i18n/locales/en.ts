@@ -55,6 +55,11 @@ const en: MessageSchema = {
   },
   export: {
     processingLabel: 'Processing',
+    cutModeLabel: 'Action',
+    cutModes: {
+      keep: { label: 'Keep selection', hint: 'export only the range' },
+      remove: { label: 'Remove selection', hint: 'delete range, join the rest' },
+    },
     format: 'Format',
     bitrate: 'Bitrate: {value} kbps',
     fadeIn: 'Fade-in (ms)',

@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useAudioCutterStore } from '../stores/audioCutter'
-import type { ExportFormat, ProcessingMode } from '../types/audio'
+import type { CutMode, ExportFormat, ProcessingMode } from '../types/audio'
 
 const { t } = useI18n({ useScope: 'global' })
 const store = useAudioCutterStore()
@@ -24,8 +24,12 @@ function setMode(m: ProcessingMode): void {
 function setFormat(f: ExportFormat): void {
   store.patchExportOptions({ format: f })
 }
+function setCutMode(m: CutMode): void {
+  store.patchExportOptions({ cutMode: m })
+}
 
 const modes: ProcessingMode[] = ['browser', 'server']
+const cutModes: CutMode[] = ['keep', 'remove']
 </script>
 
 <template>
@@ -43,6 +47,23 @@ const modes: ProcessingMode[] = ['browser', 'server']
         >
           <span class="text-sm font-medium text-neutral-100">{{ t(`export.modes.${m}.label`) }}</span>
           <span class="text-xs text-neutral-500">{{ t(`export.modes.${m}.hint`) }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Was mit der Auswahl geschehen soll -->
+    <div>
+      <p class="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-400">{{ t('export.cutModeLabel') }}</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button
+          v-for="m in cutModes"
+          :key="m"
+          class="flex flex-col items-start rounded-lg border px-3 py-2 text-left transition-colors"
+          :class="exportOptions.cutMode === m ? 'border-emerald-500 bg-emerald-500/10' : 'border-neutral-700 hover:border-neutral-600'"
+          @click="setCutMode(m)"
+        >
+          <span class="text-sm font-medium text-neutral-100">{{ t(`export.cutModes.${m}.label`) }}</span>
+          <span class="text-xs text-neutral-500">{{ t(`export.cutModes.${m}.hint`) }}</span>
         </button>
       </div>
     </div>

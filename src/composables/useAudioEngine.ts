@@ -12,7 +12,7 @@ import type {
   ExportOptions,
 } from '../types/audio'
 import { msToSamples } from '../utils/audioMath'
-import { applyFade, sliceChannels } from '../utils/sliceBuffer'
+import { applyFade, removeRegion, sliceChannels } from '../utils/sliceBuffer'
 import { encodeWav } from '../utils/wavEncoder'
 import { channelCountFor, encodeMp3Blocks } from '../utils/mp3Encoder'
 import { encodeMp3InWorker, workerSupported } from './useMp3Worker'
@@ -84,7 +84,11 @@ export function useAudioEngine() {
     const startSample = msToSamples(region.startMs, sampleRate)
     const endSample = msToSamples(region.endMs, sampleRate)
 
-    const sliced = sliceChannels(channels, startSample, endSample)
+    // 'remove' = Auswahl entfernen (Kopf + Rest verbinden), sonst Auswahl behalten.
+    const sliced =
+      options.cutMode === 'remove'
+        ? removeRegion(channels, startSample, endSample)
+        : sliceChannels(channels, startSample, endSample)
     if (sliced.length === 0 || sliced[0].length === 0) {
       throw new Error('emptyRegion')
     }

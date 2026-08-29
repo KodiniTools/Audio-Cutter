@@ -92,28 +92,68 @@ app.post('/cut', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'Ungültiger Bereich (Ende <= Start).' })
     }
 
+    const mode = req.body.mode === 'remove' ? 'remove' : 'keep'
     const startSec = startMs / 1000
+    const endSec = endMs / 1000
     const durSec = (endMs - startMs) / 1000
+
+    // Im Entfernen-Modus: zu behaltende Segmente (Kopf + Rest) bestimmen.
+    let removeSegments = null
+    let removeOutDurSec = 0
+    if (mode === 'remove') {
+      removeSegments = []
+      if (startSec > 0.0005) removeSegments.push([0, startSec])
+      if (endSec < durationSec - 0.0005) removeSegments.push([endSec, durationSec])
+      if (removeSegments.length === 0) {
+        await cleanup()
+        return res.status(400).json({ error: 'Nach dem Entfernen bliebe nichts übrig.' })
+      }
+      removeOutDurSec = removeSegments.reduce((a, [s, e]) => a + (e - s), 0)
+    }
 
     workDir = await mkdtemp(join(tmpdir(), 'audiocut-'))
     const outName = `cut_${randomUUID()}.${format}`
     const outputPath = join(workDir, outName)
 
-    // Fade-Filter (st für Fade-Out relativ zur Ausgabe-Zeitleiste).
-    const filters = []
-    if (fadeInMs > 0) filters.push(`afade=t=in:st=0:d=${(fadeInMs / 1000).toFixed(3)}`)
-    if (fadeOutMs > 0) {
-      const foStart = Math.max(0, durSec - fadeOutMs / 1000)
-      filters.push(`afade=t=out:st=${foStart.toFixed(3)}:d=${(fadeOutMs / 1000).toFixed(3)}`)
-    }
-
     await new Promise((resolve, reject) => {
       command = ffmpeg(inputPath)
-        // -ss vor -i + Re-Encode = schnell UND sample-/ms-genau (ffmpeg >= 2.1).
-        .inputOptions(['-ss', startSec.toFixed(3)])
-        .outputOptions(['-t', durSec.toFixed(3)])
 
-      if (filters.length) command.audioFilters(filters)
+      if (mode === 'remove') {
+        // Auswahl entfernen: Segmente per atrim herausschneiden und zusammenfügen.
+        const parts = removeSegments.map(
+          ([s, e], i) =>
+            `[0:a]atrim=start=${s.toFixed(3)}:end=${e.toFixed(3)},asetpts=PTS-STARTPTS[s${i}]`,
+        )
+        let graph = parts.join(';')
+        if (removeSegments.length === 1) {
+          graph += ';[s0]anull[c]'
+        } else {
+          const labels = removeSegments.map((_, i) => `[s${i}]`).join('')
+          graph += `;${labels}concat=n=${removeSegments.length}:v=0:a=1[c]`
+        }
+        const fades = []
+        if (fadeInMs > 0) fades.push(`afade=t=in:st=0:d=${(fadeInMs / 1000).toFixed(3)}`)
+        if (fadeOutMs > 0) {
+          const fo = Math.max(0, removeOutDurSec - fadeOutMs / 1000)
+          fades.push(`afade=t=out:st=${fo.toFixed(3)}:d=${(fadeOutMs / 1000).toFixed(3)}`)
+        }
+        let outLabel = 'c'
+        if (fades.length) {
+          graph += `;[c]${fades.join(',')}[out]`
+          outLabel = 'out'
+        }
+        command.complexFilter(graph, [outLabel])
+      } else {
+        // Auswahl behalten: -ss vor -i + Re-Encode = schnell UND ms-genau.
+        command.inputOptions(['-ss', startSec.toFixed(3)]).outputOptions(['-t', durSec.toFixed(3)])
+        const filters = []
+        if (fadeInMs > 0) filters.push(`afade=t=in:st=0:d=${(fadeInMs / 1000).toFixed(3)}`)
+        if (fadeOutMs > 0) {
+          const foStart = Math.max(0, durSec - fadeOutMs / 1000)
+          filters.push(`afade=t=out:st=${foStart.toFixed(3)}:d=${(fadeOutMs / 1000).toFixed(3)}`)
+        }
+        if (filters.length) command.audioFilters(filters)
+      }
 
       if (format === 'wav') {
         command.audioCodec('pcm_s16le').format('wav')

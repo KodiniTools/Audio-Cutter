@@ -4,6 +4,8 @@
 export type ProcessingMode = 'browser' | 'server'
 export type ExportFormat = 'wav' | 'mp3'
 export type Status = 'idle' | 'decoding' | 'processing' | 'done' | 'error'
+/** 'keep' = Auswahl behalten (Standard), 'remove' = Auswahl aus dem Track entfernen. */
+export type CutMode = 'keep' | 'remove'
 
 /** Metadaten einer geladenen Audiodatei. */
 export interface AudioMeta {
@@ -35,6 +37,8 @@ export interface ExportOptions {
   mp3Bitrate: number
   fadeInMs: number
   fadeOutMs: number
+  /** Auswahl behalten oder aus dem Track entfernen. */
+  cutMode: CutMode
 }
 
 /** Ergebnis eines Schnitts. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyFade, floatToInt16, sliceChannels } from '../src/utils/sliceBuffer'
+import { applyFade, floatToInt16, removeRegion, sliceChannels } from '../src/utils/sliceBuffer'
 import { encodeWav } from '../src/utils/wavEncoder'
 import { computePeaks } from '../src/utils/waveform'
 
@@ -29,6 +29,36 @@ describe('sliceChannels', () => {
   })
   it('behandelt leere Eingabe', () => {
     expect(sliceChannels([], 0, 10)).toEqual([])
+  })
+})
+
+describe('removeRegion', () => {
+  it('entfernt Bereich und verbindet Kopf + Rest', () => {
+    const ch = [ramp(100)]
+    const out = removeRegion(ch, 10, 40) // entfernt [10,40) -> 70 Samples
+    expect(out[0].length).toBe(70)
+    expect(out[0][0]).toBeCloseTo(0.0) // Kopf beginnt bei 0
+    expect(out[0][9]).toBeCloseTo(0.09) // letztes Kopf-Sample (Index 9)
+    expect(out[0][10]).toBeCloseTo(0.4) // erstes Rest-Sample (war Index 40)
+  })
+  it('nur Kopf, wenn bis Ende entfernt', () => {
+    const ch = [ramp(100)]
+    expect(removeRegion(ch, 60, 100)[0].length).toBe(60)
+  })
+  it('nur Rest, wenn ab Anfang entfernt', () => {
+    const ch = [ramp(100)]
+    const out = removeRegion(ch, 0, 40)
+    expect(out[0].length).toBe(60)
+    expect(out[0][0]).toBeCloseTo(0.4)
+  })
+  it('leer, wenn alles entfernt wird', () => {
+    expect(removeRegion([ramp(100)], 0, 100)[0].length).toBe(0)
+  })
+  it('lässt Original unverändert', () => {
+    const ch = [ramp(10)]
+    const copy = Float32Array.from(ch[0])
+    removeRegion(ch, 2, 5)
+    expect(Array.from(ch[0])).toEqual(Array.from(copy))
   })
 })
 

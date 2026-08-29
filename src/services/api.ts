@@ -60,6 +60,7 @@ export function cutOnServer(
     form.append('mp3Bitrate', String(options.mp3Bitrate))
     form.append('fadeInMs', String(Math.round(options.fadeInMs)))
     form.append('fadeOutMs', String(Math.round(options.fadeOutMs)))
+    form.append('mode', options.cutMode)
     form.append('file', file, file.name)
 
     const onAbort = () => xhr.abort()

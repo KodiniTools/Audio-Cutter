@@ -55,6 +55,11 @@ export default {
   },
   export: {
     processingLabel: 'Verarbeitung',
+    cutModeLabel: 'Aktion',
+    cutModes: {
+      keep: { label: 'Auswahl behalten', hint: 'nur den Bereich exportieren' },
+      remove: { label: 'Auswahl entfernen', hint: 'Bereich löschen, Rest verbinden' },
+    },
     format: 'Format',
     bitrate: 'Bitrate: {value} kbps',
     fadeIn: 'Fade-In (ms)',
