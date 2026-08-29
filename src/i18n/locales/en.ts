@@ -26,7 +26,10 @@ const en: MessageSchema = {
     formats: 'WAV, MP3, OGG, FLAC, M4A – processing stays local in your browser.',
   },
   waveform: {
-    hint: 'Drag to select · drag the edges to fine-tune',
+    hint: 'Drag to select · drag the edges to fine-tune · Wheel = zoom · Shift+Wheel = pan',
+    zoomIn: 'Zoom in',
+    zoomOut: 'Zoom out',
+    zoomReset: 'Reset zoom',
   },
   player: {
     play: 'Play',

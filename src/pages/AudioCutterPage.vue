@@ -27,9 +27,9 @@ const playState = ref<PlayState>('stopped')
 const pausedMs = ref(0)
 let player: RegionPlayer | null = null
 
-function setPlayheadMs(ms: number | null): void {
+function setPlayheadMs(ms: number | null, follow = false): void {
   const d = store.durationMs
-  waveformRef.value?.setPlayhead(ms !== null && d > 0 ? ms / d : null)
+  waveformRef.value?.setPlayhead(ms !== null && d > 0 ? ms / d : null, follow)
 }
 
 const activeLocale = computed<AppLocale>(() => i18n.global.locale.value)
@@ -124,7 +124,7 @@ function onPlay(): void {
   // Frisch starten.
   player?.stop()
   player = engine.createRegionPlayer(decoded.value, region.value, {
-    onTime: (ms) => setPlayheadMs(ms),
+    onTime: (ms) => setPlayheadMs(ms, true),
     onEnded: () => {
       playState.value = 'stopped'
       player = null
@@ -138,7 +138,7 @@ function onPause(): void {
   if (!player || playState.value !== 'playing') return
   pausedMs.value = player.pause()
   playState.value = 'paused'
-  setPlayheadMs(pausedMs.value)
+  setPlayheadMs(pausedMs.value, true)
 }
 
 function onStopPlayback(): void {
