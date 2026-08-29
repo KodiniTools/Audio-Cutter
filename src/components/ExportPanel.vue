@@ -67,7 +67,7 @@ const formats: ExportFormat[] = ['wav', 'mp3']
           @change="setCutMode(($event.target as HTMLSelectElement).value as CutMode)"
         >
           <option v-for="m in cutModes" :key="m" :value="m">
-            {{ t(`export.cutModes.${m}.label`) }} · {{ t(`export.cutModes.${m}.hint`) }}
+            {{ t(`export.cutModes.${m}.label`) }}
           </option>
         </select>
       </div>
