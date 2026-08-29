@@ -174,13 +174,58 @@ function onCancel(): void {
   abortController?.abort()
 }
 
-function onDownload(): void {
+/** Ergebnis aus der App verwerfen (Blob freigeben). Server-Temp ist bereits weg. */
+function discardResult(): void {
+  store.setResult(null)
+  store.setStatus('idle')
+}
+
+function onDelete(): void {
+  discardResult()
+}
+
+async function onDownload(): Promise<void> {
   const r = store.result
   if (!r) return
-  const url = URL.createObjectURL(r.blob)
+  const mime = r.format === 'wav' ? 'audio/wav' : 'audio/mpeg'
+
+  // Moderne Browser: Speicherort + Name per Dialog waehlen (File System Access API).
+  const picker = (
+    window as unknown as {
+      showSaveFilePicker?: (o: unknown) => Promise<{
+        createWritable: () => Promise<{ write: (d: Blob) => Promise<void>; close: () => Promise<void> }>
+      }>
+    }
+  ).showSaveFilePicker
+  if (typeof picker === 'function') {
+    try {
+      const handle = await picker({
+        suggestedName: r.filename,
+        types: [{ description: r.format.toUpperCase(), accept: { [mime]: [`.${r.format}`] } }],
+      })
+      const writable = await handle.createWritable()
+      await writable.write(r.blob)
+      await writable.close()
+      discardResult() // nach erfolgreichem Speichern aus der App entfernen
+    } catch (e) {
+      // Abbruch im Dialog -> Ergebnis behalten; anderer Fehler -> Fallback unten.
+      if (e instanceof DOMException && e.name === 'AbortError') return
+      fallbackDownload(r.blob, r.filename)
+      discardResult()
+    }
+    return
+  }
+
+  // Fallback (Firefox/Safari): klassischer Download-Anchor.
+  fallbackDownload(r.blob, r.filename)
+  discardResult()
+}
+
+function fallbackDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = r.filename
+  a.download = filename
   document.body.appendChild(a)
   a.click()
   a.remove()
@@ -367,7 +412,7 @@ onBeforeUnmount(() => {
 
       <TimeControls @seek="onSeekReveal" />
 
-      <ExportPanel @process="onProcess" @cancel="onCancel" @download="onDownload" />
+      <ExportPanel @process="onProcess" @cancel="onCancel" @download="onDownload" @delete="onDelete" />
     </div>
 
     <footer class="mt-10 text-center text-xs text-neutral-600">
