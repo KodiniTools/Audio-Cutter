@@ -122,15 +122,18 @@ export function useAudioEngine() {
     }
   }
 
-  /** Spielt einen Bereich zur Vorschau ab. Gibt eine stop()-Funktion zurück. */
-  function playRegion(
+  /**
+   * Erzeugt einen Vorschau-Player für den Bereich [startMs, endMs].
+   * Unterstützt Pause/Resume/Stop und meldet die Live-Position (ms) via onTime.
+   * Web Audio kennt kein natives Pause -> beim Fortsetzen wird eine neue
+   * BufferSource ab der eingefrorenen Position gestartet.
+   */
+  function createRegionPlayer(
     decoded: DecodedAudio,
     region: CutRegion,
-    onEnded?: () => void,
-  ): () => void {
+    callbacks: { onTime: (ms: number) => void; onEnded: () => void },
+  ): RegionPlayer {
     const ctx = getContext()
-    if (ctx.state === 'suspended') void ctx.resume()
-
     const { sampleRate, channels } = decoded
     const buffer = ctx.createBuffer(channels.length, channels[0].length, sampleRate)
     // Unsere Kanäle sind ArrayBuffer-gestützt; copyToChannel verlangt seit TS 5.7 diesen Buffertyp.
@@ -138,23 +141,110 @@ export function useAudioEngine() {
       buffer.copyToChannel(channels[ch] as Float32Array<ArrayBuffer>, ch)
     }
 
-    const src = ctx.createBufferSource()
-    src.buffer = buffer
-    src.connect(ctx.destination)
-    if (onEnded) src.onended = onEnded
+    const startMs = Math.max(0, region.startMs)
+    const endMs = Math.max(startMs, region.endMs)
 
-    const offsetSec = region.startMs / 1000
-    const durationSec = Math.max(0, (region.endMs - region.startMs) / 1000)
-    src.start(0, offsetSec, durationSec)
+    let src: AudioBufferSourceNode | null = null
+    let anchorCtxTime = 0 // ctx.currentTime beim letzten (Neu-)Start
+    let anchorMs = startMs // Position beim letzten (Neu-)Start
+    let posMs = startMs
+    let paused = false
+    let raf = 0
 
-    return () => {
-      try {
-        src.stop()
-      } catch {
-        /* bereits gestoppt */
+    function computePos(): number {
+      return anchorMs + (ctx.currentTime - anchorCtxTime) * 1000
+    }
+
+    function tick(): void {
+      if (!src) return
+      posMs = computePos()
+      if (posMs >= endMs) {
+        posMs = endMs
+        callbacks.onTime(posMs)
+        stopSrc()
+        paused = false
+        posMs = startMs
+        callbacks.onEnded()
+        return
       }
+      callbacks.onTime(posMs)
+      raf = requestAnimationFrame(tick)
+    }
+
+    function stopSrc(): void {
+      cancelAnimationFrame(raf)
+      raf = 0
+      if (src) {
+        try {
+          src.onended = null
+          src.stop()
+        } catch {
+          /* bereits gestoppt */
+        }
+        try {
+          src.disconnect()
+        } catch {
+          /* ignore */
+        }
+        src = null
+      }
+    }
+
+    function startFrom(ms: number): void {
+      if (ctx.state === 'suspended') void ctx.resume()
+      stopSrc()
+      src = ctx.createBufferSource()
+      src.buffer = buffer
+      src.connect(ctx.destination)
+      anchorMs = Math.min(Math.max(ms, startMs), endMs)
+      anchorCtxTime = ctx.currentTime
+      posMs = anchorMs
+      paused = false
+      const durSec = Math.max(0, (endMs - anchorMs) / 1000)
+      src.start(0, anchorMs / 1000, durSec)
+      raf = requestAnimationFrame(tick)
+    }
+
+    // Sofort losspielen.
+    startFrom(startMs)
+
+    return {
+      pause(): number {
+        if (paused || !src) return posMs
+        posMs = Math.min(computePos(), endMs)
+        stopSrc()
+        paused = true
+        return posMs
+      },
+      resume(): void {
+        if (paused) startFrom(posMs)
+      },
+      stop(): void {
+        stopSrc()
+        paused = false
+        posMs = startMs
+      },
+      currentMs(): number {
+        return posMs
+      },
+      isPaused(): boolean {
+        return paused
+      },
     }
   }
 
-  return { decode, cut, playRegion }
+  return { decode, cut, createRegionPlayer }
+}
+
+/** Steuer-Handle eines laufenden Vorschau-Players. */
+export interface RegionPlayer {
+  /** Hält an und liefert die aktuelle Position (ms). */
+  pause(): number
+  /** Setzt ab der eingefrorenen Position fort. */
+  resume(): void
+  /** Stoppt und setzt auf den Bereichsanfang zurück. */
+  stop(): void
+  /** Aktuelle Position (ms). */
+  currentMs(): number
+  isPaused(): boolean
 }
