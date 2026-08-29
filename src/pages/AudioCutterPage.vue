@@ -35,9 +35,9 @@ let player: RegionPlayer | null = null
 /** Auswahl-Uebernahme moeglich, sobald ein Cursor steht und nicht gespielt wird. */
 const canApplyCursor = computed(() => cursorMs.value !== null && playState.value !== 'playing')
 
-function setPlayheadMs(ms: number | null): void {
+function setPlayheadMs(ms: number | null, center = false): void {
   const d = store.durationMs
-  waveformRef.value?.setPlayhead(ms !== null && d > 0 ? ms / d : null)
+  waveformRef.value?.setPlayhead(ms !== null && d > 0 ? ms / d : null, center)
 }
 
 /** Klick in die Waveform: Cursor-/Abspielpunkt setzen (auch waehrend Pause). */
@@ -146,7 +146,7 @@ function onPlay(): void {
     decoded.value,
     { startMs, endMs: dur },
     {
-      onTime: (ms) => setPlayheadMs(ms),
+      onTime: (ms) => setPlayheadMs(ms, true),
       onEnded: () => {
         playState.value = 'stopped'
         player = null
@@ -161,7 +161,7 @@ function onPause(): void {
   if (!player || playState.value !== 'playing') return
   cursorMs.value = player.pause()
   playState.value = 'paused'
-  setPlayheadMs(cursorMs.value)
+  setPlayheadMs(cursorMs.value, true)
 }
 
 function onStopPlayback(): void {
