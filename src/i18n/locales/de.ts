@@ -54,6 +54,7 @@ export default {
     reset: 'Auswahl zurücksetzen',
   },
   export: {
+    title: 'Export',
     processingLabel: 'Verarbeitung',
     cutModeLabel: 'Aktion',
     cutModes: {
@@ -72,6 +73,10 @@ export default {
       browser: { label: 'Browser', hint: 'lokal · privat' },
       server: { label: 'Server', hint: 'große Dateien · FFmpeg' },
     },
+  },
+  overlay: {
+    title: 'Wird geschnitten …',
+    hint: 'Bitte warten, während die Auswahl verarbeitet wird.',
   },
   validation: {
     noAudio: 'Keine Audiodaten geladen.',
