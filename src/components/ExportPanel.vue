@@ -9,7 +9,12 @@ const { t } = useI18n({ useScope: 'global' })
 const store = useAudioCutterStore()
 const { mode, exportOptions, status, progress, error, result, canProcess } = storeToRefs(store)
 
-const emit = defineEmits<{ (e: 'process'): void; (e: 'cancel'): void; (e: 'download'): void }>()
+const emit = defineEmits<{
+  (e: 'process'): void
+  (e: 'cancel'): void
+  (e: 'download'): void
+  (e: 'delete'): void
+}>()
 
 const busy = computed(() => status.value === 'processing' || status.value === 'decoding')
 
@@ -113,13 +118,20 @@ const modes: ProcessingMode[] = ['browser', 'server']
 
       <p v-if="error" class="text-sm text-red-400">{{ error }}</p>
 
-      <button
-        v-if="result"
-        class="rounded-lg border border-emerald-500 px-4 py-2.5 font-medium text-emerald-300 hover:bg-emerald-500/10"
-        @click="emit('download')"
-      >
-        ⬇ {{ t('export.download', { name: result.filename }) }}
-      </button>
+      <template v-if="result">
+        <button
+          class="rounded-lg border border-emerald-500 px-4 py-2.5 font-medium text-emerald-300 hover:bg-emerald-500/10"
+          @click="emit('download')"
+        >
+          ⬇ {{ t('export.download', { name: result.filename }) }}
+        </button>
+        <button
+          class="rounded-lg border border-neutral-700 px-4 py-2 text-sm font-medium text-neutral-300 transition-colors hover:border-red-500 hover:text-red-400"
+          @click="emit('delete')"
+        >
+          🗑 {{ t('export.delete') }}
+        </button>
+      </template>
     </div>
   </div>
 </template>

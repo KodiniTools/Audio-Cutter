@@ -62,6 +62,7 @@ export default {
     submit: 'Schneiden & Exportieren',
     cancel: 'Abbrechen',
     download: '{name} herunterladen',
+    delete: 'Löschen',
     modes: {
       browser: { label: 'Browser', hint: 'lokal · privat' },
       server: { label: 'Server', hint: 'große Dateien · FFmpeg' },

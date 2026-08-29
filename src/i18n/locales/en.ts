@@ -62,6 +62,7 @@ const en: MessageSchema = {
     submit: 'Cut & Export',
     cancel: 'Cancel',
     download: 'Download {name}',
+    delete: 'Delete',
     modes: {
       browser: { label: 'Browser', hint: 'local · private' },
       server: { label: 'Server', hint: 'large files · FFmpeg' },
