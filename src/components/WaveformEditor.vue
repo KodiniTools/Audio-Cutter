@@ -15,6 +15,12 @@ const playhead = ref<number | null>(null)
 
 type DragTarget = 'start' | 'end' | 'new' | null
 const dragging = ref<DragTarget>(null)
+/** Anker (ms) für eine neue Auswahl – erlaubt Ziehen in BEIDE Richtungen. */
+const anchorMs = ref(0)
+/** Merkt, ob seit pointerdown wirklich gezogen wurde (Klick vs. Drag). */
+const moved = ref(false)
+const downX = ref(0)
+const DRAG_THRESHOLD_PX = 3
 
 const colors = {
   waveform: '#34d399',
@@ -63,28 +69,40 @@ function onPointerDown(e: PointerEvent): void {
   const xEnd = regionEndFrac.value * rect.width
   const x = e.clientX - rect.left
 
+  downX.value = x
+  moved.value = false
+
   if (Math.abs(x - xStart) <= HANDLE_PX) dragging.value = 'start'
   else if (Math.abs(x - xEnd) <= HANDLE_PX) dragging.value = 'end'
   else {
+    // Neue Auswahl: Anker merken, aber noch NICHTS setzen -> ein reiner Klick
+    // (ohne Bewegung) laesst die bestehende Auswahl unangetastet.
     dragging.value = 'new'
-    const ms = xToMs(e.clientX)
-    store.setRegion(ms, ms)
+    anchorMs.value = xToMs(e.clientX)
   }
-  onPointerMove(e)
 }
 
 function onPointerMove(e: PointerEvent): void {
   const ms = xToMs(e.clientX)
+  if (dragging.value) {
+    const rect = canvasRef.value!.getBoundingClientRect()
+    if (Math.abs(e.clientX - rect.left - downX.value) > DRAG_THRESHOLD_PX) moved.value = true
+  }
+
   if (dragging.value === 'start') store.setStart(ms)
   else if (dragging.value === 'end') store.setEnd(ms)
-  else if (dragging.value === 'new') store.setEnd(ms)
-  else if (store.hasAudio) playhead.value = durationMs.value > 0 ? ms / durationMs.value : null
+  // Anker + aktuelle Position -> setRegion sortiert selbst (Ziehen in beide Richtungen).
+  else if (dragging.value === 'new') {
+    if (moved.value) store.setRegion(anchorMs.value, ms)
+  } else if (store.hasAudio) {
+    playhead.value = durationMs.value > 0 ? ms / durationMs.value : null
+  }
 }
 
 function onPointerUp(e: PointerEvent): void {
-  if (dragging.value === 'new' && region.value.startMs === region.value.endMs) {
-    // reiner Klick -> keine Auswahl von Länge 0 stehen lassen
-    store.setRegion(0, durationMs.value)
+  if (dragging.value === 'new' && !moved.value) {
+    // Reiner Klick: Auswahl unveraendert lassen, nur den Playhead setzen.
+    playhead.value = durationMs.value > 0 ? xToMs(e.clientX) / durationMs.value : null
   }
   dragging.value = null
   canvasRef.value?.releasePointerCapture(e.pointerId)
