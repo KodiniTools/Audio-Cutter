@@ -63,43 +63,44 @@ Das Repo wird auf dem VPS nach `/opt/audio-cutter` geklont, dort gebaut, und das
 gebaute Frontend nach `/var/www/kodinitools.com/audio-cutter/` kopiert. Das
 Backend laeuft in-place aus `/opt/audio-cutter/server` unter PM2 (Port **9017**).
 
-**Einmalig klonen:**
+**Einmalig klonen (+ ffmpeg fuer den Server-Modus):**
 
 ```bash
 cd /opt
 git clone https://github.com/KodiniTools/Audio-Cutter.git audio-cutter
-```
-
-**Frontend bauen + ausliefern:**
-
-```bash
-cd /opt/audio-cutter
-git pull
-npm install
-npm run build
-mkdir -p /var/www/kodinitools.com/audio-cutter
-cp -r dist/* /var/www/kodinitools.com/audio-cutter/
-```
-
-**Backend (nur wenn Server-Modus genutzt wird):**
-
-```bash
-# ffmpeg muss vorhanden sein:
 sudo apt-get install -y ffmpeg
-
-# Installiert Prod-Dependencies und startet/reloaded PM2 (Port 9017) + Healthcheck.
-cd /opt/audio-cutter
-bash deploy/deploy-backend.sh
 ```
 
-Manuell (falls ohne Skript):
+**Deploy (ein Kommando):**
 
 ```bash
-cd /opt/audio-cutter/server
-npm install --omit=dev
-pm2 start ecosystem.config.cjs
-pm2 save
+cd /opt/audio-cutter
+bash deploy.sh
 ```
+
+`deploy.sh` macht: `git pull`, Frontend `npm install` + `npm run build`, Auslieferung
+nach `/var/www/kodinitools.com/audio-cutter/` — und startet das **Backend nur dann**
+neu, wenn sich etwas unter `server/` geaendert hat.
+
+Optionen:
+
+```bash
+bash deploy.sh --no-pull    # lokalen Stand deployen, ohne git pull
+bash deploy.sh --backend    # Backend-Reload erzwingen
+bash deploy.sh --frontend   # nur Frontend, Backend nie anfassen
+```
+
+**Wann ein Backend-Restart noetig ist:**
+
+| Aenderung | Backend-Restart? |
+| --- | --- |
+| Frontend (`src/`, Komponenten, i18n, Styles) | Nein |
+| `server/index.js` (API-Logik) | Ja |
+| `server/package.json` (Dependencies) | Ja (+ `npm install`) |
+| `server/ecosystem.config.cjs` (Port/Env) | Ja (`reload --update-env`) |
+
+`deploy.sh` erkennt das automatisch. Nur das Backup-Skript direkt:
+`bash deploy/deploy-backend.sh` (installiert Prod-Deps, startet/reloaded PM2 Port 9017 + Healthcheck).
 
 **Nginx:** Inhalt aus `deploy/nginx-audio-cutter.conf` in den `server{}`-Block
 einfügen, dann `sudo nginx -t && sudo systemctl reload nginx`.
