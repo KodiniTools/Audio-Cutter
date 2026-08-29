@@ -43,16 +43,26 @@ function setPlayheadMs(
   waveformRef.value?.setPlayhead(ms !== null && d > 0 ? ms / d : null, opts)
 }
 
+/** Cursor manuell verschieben. Verwirft einen pausierten Player, damit das
+ *  naechste Play am NEUEN Cursor startet (nicht an der Pausenstelle weiterspielt). */
+function moveCursor(ms: number, ensure: boolean): void {
+  cursorMs.value = ms
+  if (playState.value === 'paused') {
+    player?.stop()
+    player = null
+    playState.value = 'stopped'
+  }
+  if (playState.value !== 'playing') setPlayheadMs(ms, { ensure })
+}
+
 /** Klick in die Waveform: Cursor setzen; Ansicht bleibt ruhig (Klick ist im Fenster). */
 function onSeek(ms: number): void {
-  cursorMs.value = ms
-  if (playState.value !== 'playing') setPlayheadMs(ms)
+  moveCursor(ms, false)
 }
 
 /** Seek aus Zahlenfeldern/Spinnern: Cursor ggf. ins Sichtfenster holen. */
 function onSeekReveal(ms: number): void {
-  cursorMs.value = ms
-  if (playState.value !== 'playing') setPlayheadMs(ms, { ensure: true })
+  moveCursor(ms, true)
 }
 
 const activeLocale = computed<AppLocale>(() => i18n.global.locale.value)
