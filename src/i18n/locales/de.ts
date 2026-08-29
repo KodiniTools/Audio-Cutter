@@ -31,6 +31,9 @@ export default {
     zoomOut: 'Rauszoomen',
     zoomReset: 'Zoom zurücksetzen',
     followMarker: 'Marker folgen',
+    total: 'Gesamtdauer',
+    cursor: 'Cursor',
+    remaining: 'Restdauer',
   },
   player: {
     play: 'Abspielen',
