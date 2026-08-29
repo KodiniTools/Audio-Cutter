@@ -3,7 +3,7 @@
 // Kapselt alle nicht-testbaren Browser-APIs; die eigentliche Logik liegt in ../utils.
 // MP3-Encoding läuft im Web Worker (Fortschritt + Abbruch); Sync-Fallback ohne Worker.
 
-import { Mp3Encoder } from 'lamejs'
+import { Mp3Encoder } from '@breezystack/lamejs'
 import type {
   AudioMeta,
   CutRegion,

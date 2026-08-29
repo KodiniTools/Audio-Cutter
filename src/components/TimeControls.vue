@@ -34,6 +34,16 @@ function nudgeEnd(delta: number): void {
 function fmtDelta(d: number): string {
   return `${d > 0 ? '+' : ''}${d}`
 }
+
+/** Auswahl auf die volle Länge zurücksetzen -> neu wählbar. */
+function resetSelection(): void {
+  store.setRegion(0, durationMs.value)
+}
+
+/** Auswahl ist nicht bereits die volle Länge? (Reset dann sinnvoll) */
+const canReset = computed(
+  () => region.value.startMs > 0 || region.value.endMs < durationMs.value,
+)
 </script>
 
 <template>
@@ -78,15 +88,29 @@ function fmtDelta(d: number): string {
       </div>
     </div>
 
-    <div class="sm:col-span-2 flex items-center justify-between rounded-lg bg-neutral-900/30 px-4 py-2 text-sm">
+    <div class="sm:col-span-2 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-neutral-900/30 px-4 py-2 text-sm">
       <span class="text-neutral-400">
         {{ t('time.selection') }} <span class="font-mono text-neutral-100">{{ formatMs(selectedDurationMs) }}</span>
         <span class="text-neutral-500"> / {{ formatMs(durationMs) }}</span>
       </span>
-      <span v-if="!regionValidation.valid && regionValidation.errorCode" class="font-medium text-amber-400">
-        {{ t(`validation.${regionValidation.errorCode}`) }}
-      </span>
-      <span v-else-if="regionValidation.valid" class="text-emerald-400">{{ t('time.valid') }}</span>
+      <div class="flex items-center gap-3">
+        <span v-if="!regionValidation.valid && regionValidation.errorCode" class="font-medium text-amber-400">
+          {{ t(`validation.${regionValidation.errorCode}`) }}
+        </span>
+        <span v-else-if="regionValidation.valid" class="text-emerald-400">{{ t('time.valid') }}</span>
+        <button
+          class="inline-flex items-center gap-1 rounded-md border border-neutral-700 px-2.5 py-1 text-xs font-medium text-neutral-300 transition-colors hover:border-emerald-500 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-700 disabled:hover:text-neutral-300"
+          :disabled="!canReset"
+          :title="t('time.reset')"
+          @click="resetSelection"
+        >
+          <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v6h6M20 20v-6h-6" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20 10a8 8 0 0 0-14.9-3M4 14a8 8 0 0 0 14.9 3" />
+          </svg>
+          {{ t('time.reset') }}
+        </button>
+      </div>
     </div>
   </div>
 </template>

@@ -3,7 +3,7 @@
 // Lagert das (CPU-intensive) MP3-Encoding vom Main-Thread aus.
 // Empfängt rohe Kanaldaten, meldet Fortschritt und liefert die MP3-Bytes zurück.
 
-import { Mp3Encoder } from 'lamejs'
+import { Mp3Encoder } from '@breezystack/lamejs'
 import { channelCountFor, encodeMp3Blocks } from '../utils/mp3Encoder'
 import type { Mp3WorkerRequest, Mp3WorkerResponse } from '../types/mp3Worker'
 

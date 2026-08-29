@@ -5,10 +5,13 @@
 
 import { floatToInt16 } from './sliceBuffer'
 
-/** Minimales Encoder-Interface (kompatibel zu lamejs `Mp3Encoder`). */
+/** Byte-Chunk, wie ihn lamejs-Encoder liefern (Original: Int8Array, Fork: Uint8Array). */
+export type Mp3Chunk = Int8Array | Uint8Array
+
+/** Minimales Encoder-Interface (kompatibel zu lamejs `Mp3Encoder` und Fork). */
 export interface Mp3EncoderLike {
-  encodeBuffer(left: Int16Array, right?: Int16Array): Int8Array
-  flush(): Int8Array
+  encodeBuffer(left: Int16Array, right?: Int16Array): Mp3Chunk
+  flush(): Mp3Chunk
 }
 
 /** lamejs verarbeitet 1152 Samples pro Frame. */
@@ -42,7 +45,7 @@ export function encodeMp3Blocks(
   const left = floatToInt16(channels[0])
   const right = numChannels === 2 ? floatToInt16(channels[1]) : undefined
 
-  const chunks: Int8Array[] = []
+  const chunks: Mp3Chunk[] = []
   const total = left.length // > 0 (oben geprüft)
 
   for (let i = 0; i < left.length; i += MP3_BLOCK_SIZE) {
@@ -63,8 +66,8 @@ export function encodeMp3Blocks(
   return concatInt8(chunks)
 }
 
-/** Fügt eine Liste Int8Arrays zu einem Uint8Array zusammen. */
-export function concatInt8(chunks: Int8Array[]): Uint8Array<ArrayBuffer> {
+/** Fügt eine Liste Byte-Chunks zu einem Uint8Array zusammen. */
+export function concatInt8(chunks: Mp3Chunk[]): Uint8Array<ArrayBuffer> {
   let totalLen = 0
   for (const c of chunks) totalLen += c.length
   const out = new Uint8Array(totalLen)
