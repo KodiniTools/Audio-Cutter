@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useAudioCutterStore } from '../stores/audioCutter'
 import { useWaveform } from '../composables/useWaveform'
 import { absToView, clampZoom, viewToAbs, viewWindow } from '../utils/zoom'
+import { formatMs } from '../utils/audioMath'
 
 const { t } = useI18n({ useScope: 'global' })
 const store = useAudioCutterStore()
@@ -45,6 +46,15 @@ const colors = {
   background: '#0a0a0a',
   axis: '#262626',
 }
+
+// Live-Anzeigen: Gesamtdauer, Cursorposition, Restdauer (ms + mm:ss.mmm).
+const cursorLiveMs = computed(() =>
+  playhead.value !== null ? playhead.value * durationMs.value : null,
+)
+const remainingMs = computed(() =>
+  cursorLiveMs.value !== null ? Math.max(0, durationMs.value - cursorLiveMs.value) : null,
+)
+const msLabel = (ms: number) => `${formatMs(ms)} · ${Math.round(ms)} ms`
 
 const regionStartFrac = computed(() =>
   durationMs.value > 0 ? region.value.startMs / durationMs.value : 0,
@@ -261,7 +271,24 @@ defineExpose({
       @pointerup="onPointerUp"
       @wheel.prevent="onWheel"
     ></canvas>
-    <p class="mt-2 text-center text-xs text-neutral-500">
+
+    <!-- Live-Werte: Gesamtdauer (links) · Cursor (Mitte) · Restdauer (rechts) -->
+    <div class="mt-2 flex items-start justify-between gap-2 font-mono text-xs">
+      <div class="text-left text-neutral-400">
+        <div class="text-[10px] uppercase tracking-wide text-neutral-500">{{ t('waveform.total') }}</div>
+        <div class="text-neutral-200">{{ msLabel(durationMs) }}</div>
+      </div>
+      <div class="text-center">
+        <div class="text-[10px] uppercase tracking-wide text-neutral-500">{{ t('waveform.cursor') }}</div>
+        <div class="text-emerald-300">{{ cursorLiveMs !== null ? msLabel(cursorLiveMs) : '–' }}</div>
+      </div>
+      <div class="text-right text-neutral-400">
+        <div class="text-[10px] uppercase tracking-wide text-neutral-500">{{ t('waveform.remaining') }}</div>
+        <div class="text-neutral-200">{{ remainingMs !== null ? msLabel(remainingMs) : '–' }}</div>
+      </div>
+    </div>
+
+    <p class="mt-1 text-center text-xs text-neutral-500">
       {{ t('waveform.hint') }}
     </p>
   </div>

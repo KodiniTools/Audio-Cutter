@@ -31,6 +31,9 @@ const en: MessageSchema = {
     zoomOut: 'Zoom out',
     zoomReset: 'Reset zoom',
     followMarker: 'Follow marker',
+    total: 'Total duration',
+    cursor: 'Cursor',
+    remaining: 'Remaining',
   },
   player: {
     play: 'Play',
