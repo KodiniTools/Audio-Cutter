@@ -298,7 +298,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <TimeControls />
+      <TimeControls @seek="onSeek" />
 
       <ExportPanel @process="onProcess" @cancel="onCancel" @download="onDownload" />
     </div>
