@@ -9,27 +9,56 @@ const { t } = useI18n({ useScope: 'global' })
 const store = useAudioCutterStore()
 const { region, durationMs, selectedDurationMs, regionValidation } = storeToRefs(store)
 
+/** Cursor mit dem editierten Wert synchronisieren (Waveform-Marker folgt). */
+const emit = defineEmits<{ (e: 'seek', ms: number): void }>()
+
+function applyStart(ms: number): void {
+  store.setStart(ms)
+  emit('seek', region.value.startMs) // geclampten Endwert melden
+}
+function applyEnd(ms: number): void {
+  store.setEnd(ms)
+  emit('seek', region.value.endMs)
+}
+
 const startText = computed({
   get: () => formatMs(region.value.startMs),
   set: (v: string) => {
     const ms = parseTimeToMs(v)
-    if (ms !== null) store.setStart(ms)
+    if (ms !== null) applyStart(ms)
   },
 })
 const endText = computed({
   get: () => formatMs(region.value.endMs),
   set: (v: string) => {
     const ms = parseTimeToMs(v)
-    if (ms !== null) store.setEnd(ms)
+    if (ms !== null) applyEnd(ms)
   },
 })
 
+/** Ganzzahlige ms fuer die nativen Spinner (input type=number). */
+const startMs = computed({
+  get: () => Math.round(region.value.startMs),
+  set: (v: number | string) => {
+    const ms = Number(v)
+    if (Number.isFinite(ms)) applyStart(ms)
+  },
+})
+const endMs = computed({
+  get: () => Math.round(region.value.endMs),
+  set: (v: number | string) => {
+    const ms = Number(v)
+    if (Number.isFinite(ms)) applyEnd(ms)
+  },
+})
+const maxMs = computed(() => Math.round(durationMs.value))
+
 const nudges = [-100, -10, -1, 1, 10, 100]
 function nudgeStart(delta: number): void {
-  store.setStart(region.value.startMs + delta)
+  applyStart(region.value.startMs + delta)
 }
 function nudgeEnd(delta: number): void {
-  store.setEnd(region.value.endMs + delta)
+  applyEnd(region.value.endMs + delta)
 }
 function fmtDelta(d: number): string {
   return `${d > 0 ? '+' : ''}${d}`
@@ -56,6 +85,18 @@ const canReset = computed(
         inputmode="decimal"
         :placeholder="t('time.placeholder')"
       />
+      <div class="mt-2 flex items-center gap-2">
+        <input
+          v-model.number="startMs"
+          type="number"
+          :min="0"
+          :max="maxMs"
+          step="1"
+          :aria-label="t('time.start') + ' (ms)'"
+          class="w-32 rounded-md border border-neutral-700 bg-neutral-950 px-2 py-1 font-mono text-sm text-emerald-300 outline-none focus:border-emerald-500"
+        />
+        <span class="text-xs text-neutral-500">ms</span>
+      </div>
       <div class="mt-2 flex flex-wrap gap-1">
         <button
           v-for="d in nudges"
@@ -76,6 +117,18 @@ const canReset = computed(
         inputmode="decimal"
         :placeholder="t('time.placeholder')"
       />
+      <div class="mt-2 flex items-center gap-2">
+        <input
+          v-model.number="endMs"
+          type="number"
+          :min="0"
+          :max="maxMs"
+          step="1"
+          :aria-label="t('time.end') + ' (ms)'"
+          class="w-32 rounded-md border border-neutral-700 bg-neutral-950 px-2 py-1 font-mono text-sm text-emerald-300 outline-none focus:border-emerald-500"
+        />
+        <span class="text-xs text-neutral-500">ms</span>
+      </div>
       <div class="mt-2 flex flex-wrap gap-1">
         <button
           v-for="d in nudges"
