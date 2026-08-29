@@ -72,6 +72,15 @@ npm run build
 # ffmpeg muss vorhanden sein:
 sudo apt-get install -y ffmpeg
 
+# Repo auf dem VPS auschecken/aktualisieren, dann Deploy-Skript ausfuehren.
+# Es kopiert server/ nach /var/www/kodinitools.com/audio-cutter-api/,
+# installiert Prod-Dependencies und startet (oder reloaded) PM2 + Healthcheck.
+bash deploy/deploy-backend.sh
+```
+
+Manuell (falls ohne Skript):
+
+```bash
 # server/ nach /var/www/kodinitools.com/audio-cutter-api/ kopieren
 cd /var/www/kodinitools.com/audio-cutter-api
 npm install --omit=dev
