@@ -24,19 +24,25 @@ let abortController: AbortController | null = null
 // --- Wiedergabe (Vorschau) ---
 type PlayState = 'stopped' | 'playing' | 'paused'
 const playState = ref<PlayState>('stopped')
-const pausedMs = ref(0)
-/** Vom Nutzer per Klick gesetzter Abspielpunkt (ms); null = ab Auswahlanfang. */
-const playCursorMs = ref<number | null>(null)
+/**
+ * Aktuelle Cursor-/Abspielposition (ms); null = kein Cursor gesetzt.
+ * Einzige Quelle fuer Marker, Wiedergabe-Start UND "Als Anfang/Ende".
+ * Wird per Klick (onSeek) und beim Pausieren aktualisiert.
+ */
+const cursorMs = ref<number | null>(null)
 let player: RegionPlayer | null = null
+
+/** Auswahl-Uebernahme moeglich, sobald ein Cursor steht und nicht gespielt wird. */
+const canApplyCursor = computed(() => cursorMs.value !== null && playState.value !== 'playing')
 
 function setPlayheadMs(ms: number | null): void {
   const d = store.durationMs
   waveformRef.value?.setPlayhead(ms !== null && d > 0 ? ms / d : null)
 }
 
-/** Klick in die Waveform: Abspielpunkt setzen (unabhaengig von der Wiedergabe). */
+/** Klick in die Waveform: Cursor-/Abspielpunkt setzen (auch waehrend Pause). */
 function onSeek(ms: number): void {
-  playCursorMs.value = ms
+  cursorMs.value = ms
   if (playState.value !== 'playing') setPlayheadMs(ms)
 }
 
@@ -56,7 +62,7 @@ function toMessage(e: unknown, fallbackKey: string): string {
 
 async function onFile(file: File): Promise<void> {
   store.reset()
-  playCursorMs.value = null
+  cursorMs.value = null
   store.setStatus('decoding')
   try {
     const { meta: m, decoded: d } = await engine.decode(file)
@@ -130,11 +136,11 @@ function onPlay(): void {
     playState.value = 'playing'
     return
   }
-  // Frisch starten – ab dem vom Nutzer gewaehlten Abspielpunkt (sonst Auswahlanfang),
-  // bis zum Ende der Datei (freies Vorhoeren, unabhaengig von der Auswahl).
+  // Frisch starten – ab dem Cursor (sonst Auswahlanfang), bis Dateiende
+  // (freies Vorhoeren, unabhaengig von der Auswahl).
   player?.stop()
   const dur = store.durationMs
-  const cursor = playCursorMs.value
+  const cursor = cursorMs.value
   const startMs = cursor !== null ? Math.max(0, Math.min(cursor, dur)) : region.value.startMs
   player = engine.createRegionPlayer(
     decoded.value,
@@ -144,7 +150,7 @@ function onPlay(): void {
       onEnded: () => {
         playState.value = 'stopped'
         player = null
-        setPlayheadMs(playCursorMs.value)
+        setPlayheadMs(cursorMs.value)
       },
     },
   )
@@ -153,25 +159,32 @@ function onPlay(): void {
 
 function onPause(): void {
   if (!player || playState.value !== 'playing') return
-  pausedMs.value = player.pause()
+  cursorMs.value = player.pause()
   playState.value = 'paused'
-  setPlayheadMs(pausedMs.value)
+  setPlayheadMs(cursorMs.value)
 }
 
 function onStopPlayback(): void {
   player?.stop()
   player = null
   playState.value = 'stopped'
-  // Abspielpunkt sichtbar lassen (dort startet die naechste Wiedergabe).
-  setPlayheadMs(playCursorMs.value)
+  // Cursor sichtbar lassen (dort startet die naechste Wiedergabe).
+  setPlayheadMs(cursorMs.value)
 }
 
-/** Pausierte Position als Anfang bzw. Ende der Auswahl übernehmen. */
-function applyPausedAsStart(): void {
-  store.setStart(pausedMs.value)
+/** Aktuelle Cursor-Position als Anfang bzw. Ende der Auswahl übernehmen. */
+function applyCursorAsStart(): void {
+  if (cursorMs.value === null) return
+  store.setStart(cursorMs.value)
+  // Marker exakt auf den neuen Auswahlanfang setzen (deckungsgleich).
+  cursorMs.value = region.value.startMs
+  setPlayheadMs(cursorMs.value)
 }
-function applyPausedAsEnd(): void {
-  store.setEnd(pausedMs.value)
+function applyCursorAsEnd(): void {
+  if (cursorMs.value === null) return
+  store.setEnd(cursorMs.value)
+  cursorMs.value = region.value.endMs
+  setPlayheadMs(cursorMs.value)
 }
 
 onBeforeUnmount(() => {
@@ -261,24 +274,24 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <!-- Bei Pause: Position als Anfang/Ende übernehmen -->
+        <!-- Cursor gesetzt: aktuelle Position als Anfang/Ende übernehmen -->
         <div
-          v-if="playState === 'paused'"
+          v-if="canApplyCursor"
           class="flex flex-wrap items-center justify-center gap-2 text-sm"
         >
           <span class="text-neutral-400">
-            {{ t('player.pausedAt') }}
-            <span class="font-mono text-emerald-300">{{ formatMs(pausedMs) }}</span>
+            {{ t('player.cursorAt') }}
+            <span class="font-mono text-emerald-300">{{ formatMs(cursorMs ?? 0) }}</span>
           </span>
           <button
             class="rounded-md border border-neutral-700 px-3 py-1 font-medium text-neutral-200 transition-colors hover:border-emerald-500 hover:text-emerald-300"
-            @click="applyPausedAsStart"
+            @click="applyCursorAsStart"
           >
             {{ t('player.setStart') }}
           </button>
           <button
             class="rounded-md border border-neutral-700 px-3 py-1 font-medium text-neutral-200 transition-colors hover:border-emerald-500 hover:text-emerald-300"
-            @click="applyPausedAsEnd"
+            @click="applyCursorAsEnd"
           >
             {{ t('player.setEnd') }}
           </button>
