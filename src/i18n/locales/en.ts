@@ -43,6 +43,7 @@ const en: MessageSchema = {
     placeholder: 'mm:ss.mmm',
     selection: 'Selection:',
     valid: '✓ valid',
+    reset: 'Reset selection',
   },
   export: {
     processingLabel: 'Processing',

@@ -43,6 +43,7 @@ export default {
     placeholder: 'mm:ss.mmm',
     selection: 'Auswahl:',
     valid: '✓ gültig',
+    reset: 'Auswahl zurücksetzen',
   },
   export: {
     processingLabel: 'Verarbeitung',
