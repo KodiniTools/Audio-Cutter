@@ -180,9 +180,12 @@ onBeforeUnmount(() => ro?.disconnect())
 
 defineExpose({
   // Sichtfenster folgt dem Marker nur, wenn "Marker folgen" aktiv ist (Standard: aus).
-  setPlayhead: (frac: number | null) => {
+  // center=true zentriert das Sichtfenster neu (nur bei aktivem "Marker folgen").
+  // Manuelles Setzen (Klick/Spinner) ruft center=false -> Ansicht bleibt ruhig,
+  // damit der Cursor im Zoom exakt platziert werden kann ohne Verschieben.
+  setPlayhead: (frac: number | null, center = false) => {
     playhead.value = frac
-    if (followMarker.value && frac !== null) viewCenterFrac.value = frac
+    if (center && followMarker.value && frac !== null) viewCenterFrac.value = frac
   },
 })
 </script>
