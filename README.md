@@ -57,13 +57,28 @@ npm run test       # Vitest (50 Tests: Mathe, Slicing, WAV, Peaks, Store, MP3-Bl
 npm run build      # -> dist/  (base = /audio-cutter/)
 ```
 
-## Deployment (VPS, wie gewohnt)
+## Deployment (VPS: Repo nach `/opt`, Build nach Web-Root)
 
-**Frontend:**
+Das Repo wird auf dem VPS nach `/opt/audio-cutter` geklont, dort gebaut, und das
+gebaute Frontend nach `/var/www/kodinitools.com/audio-cutter/` kopiert. Das
+Backend laeuft in-place aus `/opt/audio-cutter/server` unter PM2 (Port **9017**).
+
+**Einmalig klonen:**
 
 ```bash
+cd /opt
+git clone https://github.com/KodiniTools/Audio-Cutter.git audio-cutter
+```
+
+**Frontend bauen + ausliefern:**
+
+```bash
+cd /opt/audio-cutter
+git pull
+npm install
 npm run build
-# dist/ nach /var/www/kodinitools.com/audio-cutter/ hochladen (SCP/FileZilla)
+mkdir -p /var/www/kodinitools.com/audio-cutter
+cp -r dist/* /var/www/kodinitools.com/audio-cutter/
 ```
 
 **Backend (nur wenn Server-Modus genutzt wird):**
@@ -72,17 +87,15 @@ npm run build
 # ffmpeg muss vorhanden sein:
 sudo apt-get install -y ffmpeg
 
-# Repo auf dem VPS auschecken/aktualisieren, dann Deploy-Skript ausfuehren.
-# Es kopiert server/ nach /var/www/kodinitools.com/audio-cutter-api/,
-# installiert Prod-Dependencies und startet (oder reloaded) PM2 + Healthcheck.
+# Installiert Prod-Dependencies und startet/reloaded PM2 (Port 9017) + Healthcheck.
+cd /opt/audio-cutter
 bash deploy/deploy-backend.sh
 ```
 
 Manuell (falls ohne Skript):
 
 ```bash
-# server/ nach /var/www/kodinitools.com/audio-cutter-api/ kopieren
-cd /var/www/kodinitools.com/audio-cutter-api
+cd /opt/audio-cutter/server
 npm install --omit=dev
 pm2 start ecosystem.config.cjs
 pm2 save
