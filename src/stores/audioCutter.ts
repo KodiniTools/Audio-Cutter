@@ -26,6 +26,7 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
     mp3Bitrate: 192,
     fadeInMs: 0,
     fadeOutMs: 0,
+    cutMode: 'keep',
   })
   const status = ref<Status>('idle')
   const progress = ref(0) // 0..1

@@ -20,6 +20,29 @@ export function sliceChannels(
 }
 
 /**
+ * Entfernt [startSample, endSample) aus allen Kanälen und verbindet den Teil
+ * davor mit dem Teil danach (inverser Modus). Indizes werden geklemmt.
+ */
+export function removeRegion(
+  channels: Float32Array[],
+  startSample: number,
+  endSample: number,
+): Float32Array[] {
+  if (channels.length === 0) return []
+  const total = channels[0].length
+  const start = Math.max(0, Math.min(Math.round(startSample), total))
+  const end = Math.max(start, Math.min(Math.round(endSample), total))
+  const headLen = start
+  const tailLen = total - end
+  return channels.map((ch) => {
+    const out = new Float32Array(headLen + tailLen)
+    if (headLen > 0) out.set(ch.subarray(0, start), 0)
+    if (tailLen > 0) out.set(ch.subarray(end, total), headLen)
+    return out
+  })
+}
+
+/**
  * Lineare Fade-In/Fade-Out in-place auf bereits geschnittene Kanäle anwenden.
  * fadeIn/fadeOut werden so begrenzt, dass sie sich nicht überlappen.
  */
