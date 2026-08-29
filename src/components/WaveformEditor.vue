@@ -180,12 +180,18 @@ onBeforeUnmount(() => ro?.disconnect())
 
 defineExpose({
   // Sichtfenster folgt dem Marker nur, wenn "Marker folgen" aktiv ist (Standard: aus).
-  // center=true zentriert das Sichtfenster neu (nur bei aktivem "Marker folgen").
-  // Manuelles Setzen (Klick/Spinner) ruft center=false -> Ansicht bleibt ruhig,
-  // damit der Cursor im Zoom exakt platziert werden kann ohne Verschieben.
-  setPlayhead: (frac: number | null, center = false) => {
+  // opts.follow  -> bei Wiedergabe zentrieren, wenn "Marker folgen" aktiv ist.
+  // opts.ensure  -> Cursor ins Sichtfenster holen, falls ausserhalb (Spinner/Feld),
+  //                 unabhaengig vom Toggle. Ein Klick (ohne opts) laesst die
+  //                 Ansicht ruhig, weil der Klick ohnehin im Fenster liegt.
+  setPlayhead: (frac: number | null, opts: { follow?: boolean; ensure?: boolean } = {}) => {
     playhead.value = frac
-    if (center && followMarker.value && frac !== null) viewCenterFrac.value = frac
+    if (frac === null) return
+    if (opts.ensure) {
+      if (frac < win.value.start || frac > win.value.end) viewCenterFrac.value = frac
+    } else if (opts.follow && followMarker.value) {
+      viewCenterFrac.value = frac
+    }
   },
 })
 </script>
