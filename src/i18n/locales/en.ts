@@ -29,8 +29,13 @@ const en: MessageSchema = {
     hint: 'Drag to select · drag the edges to fine-tune',
   },
   player: {
-    play: 'Play selection',
+    play: 'Play',
+    pause: 'Pause',
+    resume: 'Resume',
     stop: 'Stop',
+    pausedAt: 'Paused at',
+    setStart: 'As start',
+    setEnd: 'As end',
   },
   time: {
     start: 'Start',

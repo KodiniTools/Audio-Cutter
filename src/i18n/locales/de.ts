@@ -29,8 +29,13 @@ export default {
     hint: 'Ziehen zum Markieren · Ränder ziehen zum Feinjustieren',
   },
   player: {
-    play: 'Auswahl abspielen',
+    play: 'Abspielen',
+    pause: 'Pause',
+    resume: 'Fortsetzen',
     stop: 'Stopp',
+    pausedAt: 'Pausiert bei',
+    setStart: 'Als Anfang',
+    setEnd: 'Als Ende',
   },
   time: {
     start: 'Start',

@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useAudioCutterStore } from '../stores/audioCutter'
-import { useAudioEngine } from '../composables/useAudioEngine'
+import { useAudioEngine, type RegionPlayer } from '../composables/useAudioEngine'
 import { cutOnServer } from '../services/api'
 import { formatMs } from '../utils/audioMath'
 import { i18n, setLocale } from '../i18n'
@@ -20,8 +20,17 @@ const engine = useAudioEngine()
 
 const waveformRef = ref<InstanceType<typeof WaveformEditor> | null>(null)
 let abortController: AbortController | null = null
-let stopPlayback: (() => void) | null = null
-const isPlaying = ref(false)
+
+// --- Wiedergabe (Vorschau) ---
+type PlayState = 'stopped' | 'playing' | 'paused'
+const playState = ref<PlayState>('stopped')
+const pausedMs = ref(0)
+let player: RegionPlayer | null = null
+
+function setPlayheadMs(ms: number | null): void {
+  const d = store.durationMs
+  waveformRef.value?.setPlayhead(ms !== null && d > 0 ? ms / d : null)
+}
 
 const activeLocale = computed<AppLocale>(() => i18n.global.locale.value)
 const locales: AppLocale[] = ['de', 'en']
@@ -104,22 +113,51 @@ function onDownload(): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-function togglePlay(): void {
+function onPlay(): void {
   if (!decoded.value) return
-  if (isPlaying.value) {
-    stopPlayback?.()
+  // Aus Pause fortsetzen.
+  if (playState.value === 'paused' && player) {
+    player.resume()
+    playState.value = 'playing'
     return
   }
-  isPlaying.value = true
-  stopPlayback = engine.playRegion(decoded.value, region.value, () => {
-    isPlaying.value = false
-    stopPlayback = null
-    waveformRef.value?.setPlayhead(null)
+  // Frisch starten.
+  player?.stop()
+  player = engine.createRegionPlayer(decoded.value, region.value, {
+    onTime: (ms) => setPlayheadMs(ms),
+    onEnded: () => {
+      playState.value = 'stopped'
+      player = null
+      setPlayheadMs(null)
+    },
   })
+  playState.value = 'playing'
+}
+
+function onPause(): void {
+  if (!player || playState.value !== 'playing') return
+  pausedMs.value = player.pause()
+  playState.value = 'paused'
+  setPlayheadMs(pausedMs.value)
+}
+
+function onStopPlayback(): void {
+  player?.stop()
+  player = null
+  playState.value = 'stopped'
+  setPlayheadMs(null)
+}
+
+/** Pausierte Position als Anfang bzw. Ende der Auswahl übernehmen. */
+function applyPausedAsStart(): void {
+  store.setStart(pausedMs.value)
+}
+function applyPausedAsEnd(): void {
+  store.setEnd(pausedMs.value)
 }
 
 onBeforeUnmount(() => {
-  stopPlayback?.()
+  player?.stop()
   abortController?.abort()
 })
 </script>
@@ -164,13 +202,69 @@ onBeforeUnmount(() => {
 
       <WaveformEditor ref="waveformRef" />
 
-      <div class="flex justify-center">
-        <button
-          class="rounded-full border border-neutral-700 px-5 py-2 text-sm font-medium text-neutral-200 hover:border-emerald-500 hover:text-emerald-300"
-          @click="togglePlay"
+      <div class="flex flex-col items-center gap-3">
+        <div class="flex items-center gap-3">
+          <!-- Abspielen / Fortsetzen (wenn nicht gerade spielend) -->
+          <button
+            v-if="playState !== 'playing'"
+            class="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-700 text-neutral-200 transition-colors hover:border-emerald-500 hover:text-emerald-300"
+            :title="playState === 'paused' ? t('player.resume') : t('player.play')"
+            :aria-label="playState === 'paused' ? t('player.resume') : t('player.play')"
+            @click="onPlay"
+          >
+            <svg viewBox="0 0 24 24" class="h-6 w-6" fill="currentColor" aria-hidden="true">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </button>
+          <!-- Pause (nur während der Wiedergabe) -->
+          <button
+            v-else
+            class="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-700 text-neutral-200 transition-colors hover:border-emerald-500 hover:text-emerald-300"
+            :title="t('player.pause')"
+            :aria-label="t('player.pause')"
+            @click="onPause"
+          >
+            <svg viewBox="0 0 24 24" class="h-6 w-6" fill="currentColor" aria-hidden="true">
+              <rect x="6" y="5" width="4" height="14" rx="1" />
+              <rect x="14" y="5" width="4" height="14" rx="1" />
+            </svg>
+          </button>
+          <!-- Stopp -->
+          <button
+            class="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-700 text-neutral-200 transition-colors hover:border-emerald-500 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-700 disabled:hover:text-neutral-200"
+            :title="t('player.stop')"
+            :aria-label="t('player.stop')"
+            :disabled="playState === 'stopped'"
+            @click="onStopPlayback"
+          >
+            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
+              <rect x="6" y="6" width="12" height="12" rx="1.5" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Bei Pause: Position als Anfang/Ende übernehmen -->
+        <div
+          v-if="playState === 'paused'"
+          class="flex flex-wrap items-center justify-center gap-2 text-sm"
         >
-          {{ isPlaying ? '■ ' + t('player.stop') : '▶ ' + t('player.play') }}
-        </button>
+          <span class="text-neutral-400">
+            {{ t('player.pausedAt') }}
+            <span class="font-mono text-emerald-300">{{ formatMs(pausedMs) }}</span>
+          </span>
+          <button
+            class="rounded-md border border-neutral-700 px-3 py-1 font-medium text-neutral-200 transition-colors hover:border-emerald-500 hover:text-emerald-300"
+            @click="applyPausedAsStart"
+          >
+            {{ t('player.setStart') }}
+          </button>
+          <button
+            class="rounded-md border border-neutral-700 px-3 py-1 font-medium text-neutral-200 transition-colors hover:border-emerald-500 hover:text-emerald-300"
+            @click="applyPausedAsEnd"
+          >
+            {{ t('player.setEnd') }}
+          </button>
+        </div>
       </div>
 
       <TimeControls />
