@@ -54,6 +54,7 @@ const en: MessageSchema = {
     reset: 'Reset selection',
   },
   export: {
+    title: 'Export',
     processingLabel: 'Processing',
     cutModeLabel: 'Action',
     cutModes: {
@@ -72,6 +73,10 @@ const en: MessageSchema = {
       browser: { label: 'Browser', hint: 'local · private' },
       server: { label: 'Server', hint: 'large files · FFmpeg' },
     },
+  },
+  overlay: {
+    title: 'Cutting …',
+    hint: 'Please wait while your selection is processed.',
   },
   validation: {
     noAudio: 'No audio loaded.',
