@@ -54,7 +54,7 @@ const showBitrate = computed(() => FORMAT_META[exportOptions.value.format].lossy
           @change="setMode(($event.target as HTMLSelectElement).value as ProcessingMode)"
         >
           <option v-for="m in modes" :key="m" :value="m">
-            {{ t(`export.modes.${m}.label`) }} · {{ t(`export.modes.${m}.hint`) }}
+            {{ t(`export.modes.${m}.label`) }}
           </option>
         </select>
       </div>
