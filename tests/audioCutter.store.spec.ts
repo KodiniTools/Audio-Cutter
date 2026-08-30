@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useAudioCutterStore } from '../src/stores/audioCutter'
 import type { AudioMeta, DecodedAudio } from '../src/types/audio'
@@ -99,5 +99,92 @@ describe('audioCutter store', () => {
     expect(s.hasAudio).toBe(false)
     expect(s.region).toEqual({ startMs: 0, endMs: 0 })
     expect(s.status).toBe('idle')
+  })
+})
+
+describe('audioCutter store · Undo/Redo', () => {
+  // Zeit steuern, damit die 600ms-Zusammenfassung deterministisch testbar ist.
+  let now = 1000
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    now = 1000
+    vi.spyOn(Date, 'now').mockImplementation(() => now)
+  })
+  afterEach(() => vi.restoreAllMocks())
+  const advance = (ms = 1000) => {
+    now += ms
+  }
+
+  it('macht Region-Änderung rückgängig und stellt sie wieder her', () => {
+    const s = useAudioCutterStore()
+    s.setDecoded(meta, decoded, null)
+    expect(s.canUndo).toBe(false)
+    advance()
+    s.setStart(2000)
+    expect(s.region.startMs).toBe(2000)
+    expect(s.canUndo).toBe(true)
+    s.undo()
+    expect(s.region.startMs).toBe(0)
+    expect(s.canRedo).toBe(true)
+    s.redo()
+    expect(s.region.startMs).toBe(2000)
+  })
+
+  it('fasst schnelle gleichartige Änderungen zu einem Schritt zusammen', () => {
+    const s = useAudioCutterStore()
+    s.setDecoded(meta, decoded, null)
+    advance()
+    s.setStart(1000)
+    s.setStart(2000) // gleiches Label, innerhalb Zeitfenster -> zusammengefasst
+    s.setStart(3000)
+    expect(s.region.startMs).toBe(3000)
+    s.undo()
+    expect(s.region.startMs).toBe(0)
+    expect(s.canUndo).toBe(false)
+  })
+
+  it('erzeugt nach dem Zeitfenster getrennte Schritte', () => {
+    const s = useAudioCutterStore()
+    s.setDecoded(meta, decoded, null)
+    advance()
+    s.setStart(1000)
+    advance(700) // > 600ms -> neuer Schritt
+    s.setStart(2000)
+    s.undo()
+    expect(s.region.startMs).toBe(1000)
+    s.undo()
+    expect(s.region.startMs).toBe(0)
+  })
+
+  it('verwirft den Redo-Stapel bei neuer Änderung', () => {
+    const s = useAudioCutterStore()
+    s.setDecoded(meta, decoded, null)
+    advance()
+    s.setStart(2000)
+    s.undo()
+    expect(s.canRedo).toBe(true)
+    advance()
+    s.setStart(5000)
+    expect(s.canRedo).toBe(false)
+  })
+
+  it('erfasst auch Export-Optionen', () => {
+    const s = useAudioCutterStore()
+    s.setDecoded(meta, decoded, null)
+    advance()
+    s.patchExportOptions({ fadeInMs: 500 })
+    expect(s.exportOptions.fadeInMs).toBe(500)
+    s.undo()
+    expect(s.exportOptions.fadeInMs).toBe(0)
+  })
+
+  it('leert die Historie bei neuer Datei und reset', () => {
+    const s = useAudioCutterStore()
+    s.setDecoded(meta, decoded, null)
+    advance()
+    s.setStart(2000)
+    expect(s.canUndo).toBe(true)
+    s.setDecoded(meta, decoded, null)
+    expect(s.canUndo).toBe(false)
   })
 })
