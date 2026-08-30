@@ -2,7 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #app { height: 100%; }
+/* min-height statt height: #app darf mit seinem Inhalt wachsen, damit der
+   nachfolgende globale Footer NICHT den unteren App-Inhalt (Auswahl-Leiste,
+   Buttons) ueberdeckt. Die App-Wurzel nutzt ohnehin min-h-screen. */
+html, body { min-height: 100%; }
 /* Body-Hintergrund folgt dem Theme (zeigt sich an den Raendern hinter
    Nav/Footer). Light = Standard, Dark via [data-theme="dark"]. */
 body { margin: 0; background: #fafafa; }
