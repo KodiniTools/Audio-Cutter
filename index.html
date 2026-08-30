@@ -4,7 +4,113 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Audio-Schneider · ms-genau | KodiniTools</title>
-    <meta name="description" content="Audiodateien millisekundengenau schneiden – lokal im Browser oder serverseitig." />
+    <meta
+      name="description"
+      content="Audiodateien millisekundengenau schneiden – kostenlos, direkt im Browser (lokal & privat, ohne Upload) oder serverseitig für große Dateien. Export als WAV, MP3, OGG, AAC, WebM und FLAC mit Fade-In/-Out."
+    />
+
+    <!-- === SEO / Crawling === -->
+    <link rel="canonical" href="https://kodinitools.com/audio-cutter/" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="author" content="KodiniTools" />
+    <meta name="publisher" content="KodiniTools" />
+    <meta
+      name="keywords"
+      content="Audio schneiden, Audio Cutter, MP3 schneiden, WAV schneiden, Audio trimmen, Audio zuschneiden, online Audio Editor, kostenlos, ohne Upload, millisekundengenau"
+    />
+    <meta name="application-name" content="Audio-Schneider" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- === Darstellung / PWA === -->
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fafafa" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a" />
+    <link rel="manifest" href="/audio-cutter/site.webmanifest" />
+    <link rel="icon" href="/audio-cutter/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/audio-cutter/icon-192.png" sizes="192x192" type="image/png" />
+    <link rel="apple-touch-icon" href="/audio-cutter/apple-touch-icon.png" />
+    <link rel="sitemap" type="application/xml" href="/audio-cutter/sitemap.xml" />
+
+    <!-- Performance: frühe Verbindung zum Bild-/Logo-Host der globalen Nav -->
+    <link rel="preconnect" href="https://kodinitools.com" crossorigin />
+    <link rel="dns-prefetch" href="https://kodinitools.com" />
+
+    <!-- === Open Graph (Facebook, LinkedIn, WhatsApp …) === -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="KodiniTools" />
+    <meta property="og:title" content="Audio-Schneider · millisekundengenau schneiden" />
+    <meta
+      property="og:description"
+      content="Audiodateien millisekundengenau schneiden – kostenlos im Browser (lokal & privat) oder serverseitig. Export als WAV, MP3, OGG, AAC, WebM, FLAC."
+    />
+    <meta property="og:url" content="https://kodinitools.com/audio-cutter/" />
+    <meta property="og:image" content="https://kodinitools.com/audio-cutter/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Audio-Schneider von KodiniTools – millisekundengenau schneiden" />
+    <meta property="og:locale" content="de_DE" />
+    <meta property="og:locale:alternate" content="en_US" />
+
+    <!-- === Twitter / X Card === -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Audio-Schneider · millisekundengenau schneiden" />
+    <meta
+      name="twitter:description"
+      content="Audiodateien millisekundengenau schneiden – kostenlos im Browser oder serverseitig. WAV, MP3, OGG, AAC, WebM, FLAC."
+    />
+    <meta name="twitter:image" content="https://kodinitools.com/audio-cutter/og-image.png" />
+    <meta name="twitter:image:alt" content="Audio-Schneider von KodiniTools" />
+
+    <!-- === Strukturierte Daten (Schema.org / JSON-LD) === -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebApplication",
+            "@id": "https://kodinitools.com/audio-cutter/#app",
+            "name": "Audio-Schneider · ms",
+            "alternateName": "KodiniTools Audio Cutter",
+            "url": "https://kodinitools.com/audio-cutter/",
+            "description": "Audiodateien millisekundengenau schneiden – kostenlos, direkt im Browser (lokal & privat, ohne Upload) oder serverseitig für große Dateien. Export als WAV, MP3, OGG, AAC, WebM und FLAC mit Fade-In/-Out.",
+            "applicationCategory": "MultimediaApplication",
+            "operatingSystem": "Any (Web-Browser)",
+            "browserRequirements": "Requires JavaScript. Requires HTML5.",
+            "inLanguage": ["de", "en"],
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+            "featureList": [
+              "Millisekundengenaues Schneiden",
+              "Auswahl behalten oder entfernen",
+              "Fade-In und Fade-Out",
+              "Vorschau der Auswahl",
+              "Zoom und Pinch-Zoom (Touch)",
+              "Undo/Redo",
+              "Tastenkürzel für Power-User",
+              "Export als WAV, MP3, OGG, AAC, WebM, FLAC",
+              "Lokale Verarbeitung ohne Upload"
+            ],
+            "screenshot": "https://kodinitools.com/audio-cutter/og-image.png",
+            "publisher": {
+              "@type": "Organization",
+              "name": "KodiniTools",
+              "url": "https://kodinitools.com/",
+              "logo": "https://kodinitools.com/images/logo.png"
+            }
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "KodiniTools", "item": "https://kodinitools.com/" },
+              { "@type": "ListItem", "position": 2, "name": "Audiotools", "item": "https://kodinitools.com/#audiotools" },
+              { "@type": "ListItem", "position": 3, "name": "Audio-Schneider", "item": "https://kodinitools.com/audio-cutter/" }
+            ]
+          }
+        ]
+      }
+    </script>
 
     <!-- Theme fruehestmoeglich setzen (kein Flash). Gleiche Logik wie die
          globale Nav: gespeicherte Wahl -> sonst System-Praeferenz. -->
@@ -68,6 +174,19 @@
   </head>
   <body>
     <div id="app"></div>
+    <!-- Statischer Inhalt für Crawler/Nutzer ohne JavaScript (SEO-Fallback). -->
+    <noscript>
+      <main style="max-width: 42rem; margin: 0 auto; padding: 2rem; font-family: system-ui, sans-serif; line-height: 1.6;">
+        <h1>Audio-Schneider · millisekundengenau</h1>
+        <p>
+          Schneide Audiodateien millisekundengenau – kostenlos und direkt im Browser (lokal &amp;
+          privat, ohne Upload) oder serverseitig für große Dateien. Unterstützte Export-Formate:
+          WAV, MP3, OGG, AAC, WebM und FLAC, inklusive Fade-In und Fade-Out.
+        </p>
+        <p><strong>Für diese Anwendung muss JavaScript aktiviert sein.</strong></p>
+        <p>Weitere Werkzeuge auf <a href="https://kodinitools.com/">KodiniTools</a>.</p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

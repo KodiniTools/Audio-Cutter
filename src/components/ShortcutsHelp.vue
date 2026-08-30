@@ -33,6 +33,7 @@ const rows = computed<Row[]>(() => [
   { chords: [[mod, 'Z']], desc: t('shortcuts.undo') },
   { chords: [[mod, 'Y'], [mod, '⇧', 'Z']], desc: t('shortcuts.redo') },
   { chords: [[mod, 'Enter']], desc: t('shortcuts.process') },
+  { chords: [[mod, 'V']], desc: t('shortcuts.paste') },
   { chords: [['?']], desc: t('shortcuts.help') },
 ])
 const touchRows = computed<string[]>(() => [

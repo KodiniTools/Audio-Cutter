@@ -23,6 +23,7 @@ const en: MessageSchema = {
   dropzone: {
     dragHint: 'Drag an audio file here or',
     browse: 'browse',
+    paste: 'or paste from clipboard (Ctrl+V)',
     formats: 'WAV, MP3, OGG, FLAC, M4A – processing stays local in your browser.',
   },
   history: {
@@ -51,6 +52,7 @@ const en: MessageSchema = {
     undo: 'Undo',
     redo: 'Redo',
     process: 'Cut & export',
+    paste: 'Paste file from clipboard',
     help: 'This overview',
     touch: 'Touch gestures',
     touchTap: 'Tap = set play point',

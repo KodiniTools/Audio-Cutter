@@ -427,9 +427,33 @@ function onKeydown(e: KeyboardEvent): void {
   }
 }
 
-onMounted(() => window.addEventListener('keydown', onKeydown))
+// --- Einfügen aus der Zwischenablage (Strg/Cmd+V) ---
+const AUDIO_EXT = /\.(wav|mp3|ogg|oga|opus|flac|m4a|aac|weba|webm|aiff?|caf)$/i
+
+/** Erste Audiodatei aus einer FileList holen (nach MIME-Typ oder Endung). */
+function pickAudioFile(list: FileList | null | undefined): File | null {
+  if (!list) return null
+  for (const f of Array.from(list)) {
+    if (f.type.startsWith('audio/') || AUDIO_EXT.test(f.name)) return f
+  }
+  return null
+}
+
+/** Enthält die Zwischenablage eine Audiodatei -> laden (sonst native Paste). */
+function onPaste(e: ClipboardEvent): void {
+  const file = pickAudioFile(e.clipboardData?.files)
+  if (!file) return
+  e.preventDefault()
+  void onFile(file)
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+  window.addEventListener('paste', onPaste)
+})
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('paste', onPaste)
   player?.stop()
   abortController?.abort()
 })

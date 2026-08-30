@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Audio-Schneider">
+  <rect width="512" height="512" rx="112" fill="#0a0a0a" />
+  <g fill="#34d399">
+    <rect x="44" y="191" width="40" height="130" rx="20" />
+    <rect x="108" y="136" width="40" height="240" rx="20" />
+    <rect x="172" y="91" width="40" height="330" rx="20" />
+    <rect x="236" y="56" width="40" height="400" rx="20" />
+    <rect x="300" y="91" width="40" height="330" rx="20" />
+    <rect x="364" y="146" width="40" height="220" rx="20" />
+    <rect x="428" y="181" width="40" height="150" rx="20" />
+  </g>
+</svg>

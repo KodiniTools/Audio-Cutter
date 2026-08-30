@@ -43,6 +43,7 @@ function onDrop(e: DragEvent): void {
     <p class="text-sm text-neutral-700 dark:text-neutral-300">
       {{ t('dropzone.dragHint') }} <span class="font-medium text-emerald-600 dark:text-emerald-400">{{ t('dropzone.browse') }}</span>
     </p>
+    <p class="text-xs text-neutral-500">{{ t('dropzone.paste') }}</p>
     <p class="text-xs text-neutral-500">{{ t('dropzone.formats') }}</p>
     <input ref="inputRef" type="file" accept="audio/*" class="hidden" @change="onInput" />
   </div>
