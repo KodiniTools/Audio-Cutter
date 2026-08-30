@@ -38,14 +38,32 @@ const moved = ref(false)
 const downX = ref(0)
 const DRAG_THRESHOLD_PX = 3
 
-const colors = {
-  waveform: '#34d399',
-  regionFill: 'rgba(52, 211, 153, 0.12)',
-  regionBorder: '#34d399',
-  playhead: '#f5f5f5',
-  background: '#0a0a0a',
-  axis: '#262626',
+// Aktives Theme (vom [data-theme]-Attribut der globalen Nav gesteuert).
+function readTheme(): 'light' | 'dark' {
+  return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
 }
+const theme = ref<'light' | 'dark'>(readTheme())
+
+// Canvas-Farben passend zum Theme (Light = heller Hintergrund, dunkler Marker).
+const colors = computed(() =>
+  theme.value === 'dark'
+    ? {
+        waveform: '#34d399',
+        regionFill: 'rgba(52, 211, 153, 0.12)',
+        regionBorder: '#34d399',
+        playhead: '#f5f5f5',
+        background: '#0a0a0a',
+        axis: '#262626',
+      }
+    : {
+        waveform: '#059669',
+        regionFill: 'rgba(5, 150, 105, 0.14)',
+        regionBorder: '#059669',
+        playhead: '#0a0a0a',
+        background: '#ffffff',
+        axis: '#e5e5e5',
+      },
+)
 
 // Live-Anzeigen: Gesamtdauer, Cursorposition, Restdauer (ms + mm:ss.mmm).
 const cursorLiveMs = computed(() =>
@@ -73,7 +91,7 @@ function render(): void {
     playhead: playhead.value,
     viewStart: win.value.start,
     viewEnd: win.value.end,
-    colors,
+    colors: colors.value,
   })
 }
 
@@ -173,7 +191,8 @@ function onPointerUp(e: PointerEvent): void {
 }
 
 let ro: ResizeObserver | null = null
-watch([regionStartFrac, regionEndFrac, decoded, playhead, zoom, viewCenterFrac], render)
+let themeObserver: MutationObserver | null = null
+watch([regionStartFrac, regionEndFrac, decoded, playhead, zoom, viewCenterFrac, theme], render)
 
 // Neue Datei -> Zoom zuruecksetzen.
 watch(decoded, () => {
@@ -185,8 +204,18 @@ onMounted(() => {
   render()
   ro = new ResizeObserver(render)
   if (canvasRef.value) ro.observe(canvasRef.value)
+  // Theme-Umschaltung (globale Nav setzt [data-theme] auf <html>) beobachten
+  // und die Canvas-Farben neu zeichnen.
+  themeObserver = new MutationObserver(() => {
+    const next = readTheme()
+    if (next !== theme.value) theme.value = next
+  })
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
 })
-onBeforeUnmount(() => ro?.disconnect())
+onBeforeUnmount(() => {
+  ro?.disconnect()
+  themeObserver?.disconnect()
+})
 
 defineExpose({
   // Sichtfenster folgt dem Marker nur, wenn "Marker folgen" aktiv ist (Standard: aus).
@@ -214,8 +243,8 @@ defineExpose({
       <button
         class="flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors"
         :class="followMarker
-          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
-          : 'border-neutral-700 text-neutral-400 hover:border-emerald-500 hover:text-emerald-300'"
+          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+          : 'border-neutral-300 text-neutral-600 hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-emerald-300'"
         :aria-pressed="followMarker"
         :title="t('waveform.followMarker')"
         @click="followMarker = !followMarker"
@@ -229,7 +258,7 @@ defineExpose({
 
       <div class="flex items-center gap-1">
       <button
-        class="flex h-8 w-8 items-center justify-center rounded-md border border-neutral-700 text-neutral-300 transition-colors hover:border-emerald-500 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-700 disabled:hover:text-neutral-300"
+        class="flex h-8 w-8 items-center justify-center rounded-md border border-neutral-300 text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-300 disabled:hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300 dark:disabled:hover:border-neutral-700 dark:disabled:hover:text-neutral-300"
         :title="t('waveform.zoomOut')"
         :aria-label="t('waveform.zoomOut')"
         :disabled="!canZoomOut"
@@ -239,9 +268,9 @@ defineExpose({
           <path stroke-linecap="round" d="M5 12h14" />
         </svg>
       </button>
-      <span class="w-12 text-center font-mono text-xs text-neutral-400">{{ zoomLabel }}</span>
+      <span class="w-12 text-center font-mono text-xs text-neutral-600 dark:text-neutral-400">{{ zoomLabel }}</span>
       <button
-        class="flex h-8 w-8 items-center justify-center rounded-md border border-neutral-700 text-neutral-300 transition-colors hover:border-emerald-500 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-700 disabled:hover:text-neutral-300"
+        class="flex h-8 w-8 items-center justify-center rounded-md border border-neutral-300 text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-300 disabled:hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300 dark:disabled:hover:border-neutral-700 dark:disabled:hover:text-neutral-300"
         :title="t('waveform.zoomIn')"
         :aria-label="t('waveform.zoomIn')"
         :disabled="!canZoomIn"
@@ -252,7 +281,7 @@ defineExpose({
         </svg>
       </button>
       <button
-        class="ml-1 flex h-8 items-center justify-center rounded-md border border-neutral-700 px-2 text-xs font-medium text-neutral-300 transition-colors hover:border-emerald-500 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-700 disabled:hover:text-neutral-300"
+        class="ml-1 flex h-8 items-center justify-center rounded-md border border-neutral-300 px-2 text-xs font-medium text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-300 disabled:hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300 dark:disabled:hover:border-neutral-700 dark:disabled:hover:text-neutral-300"
         :title="t('waveform.zoomReset')"
         :aria-label="t('waveform.zoomReset')"
         :disabled="!canZoomOut"
@@ -265,7 +294,7 @@ defineExpose({
 
     <canvas
       ref="canvasRef"
-      class="h-40 w-full cursor-crosshair rounded-lg bg-neutral-950 touch-none select-none"
+      class="h-40 w-full cursor-crosshair rounded-lg border border-neutral-200 bg-white touch-none select-none dark:border-transparent dark:bg-neutral-950"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
@@ -274,17 +303,17 @@ defineExpose({
 
     <!-- Live-Werte: Gesamtdauer (links) · Cursor (Mitte) · Restdauer (rechts) -->
     <div class="mt-2 flex items-start justify-between gap-2 font-mono text-xs">
-      <div class="text-left text-neutral-400">
+      <div class="text-left text-neutral-600 dark:text-neutral-400">
         <div class="text-[10px] uppercase tracking-wide text-neutral-500">{{ t('waveform.total') }}</div>
-        <div class="text-neutral-200">{{ msLabel(durationMs) }}</div>
+        <div class="text-neutral-800 dark:text-neutral-200">{{ msLabel(durationMs) }}</div>
       </div>
       <div class="text-center">
         <div class="text-[10px] uppercase tracking-wide text-neutral-500">{{ t('waveform.cursor') }}</div>
-        <div class="text-emerald-300">{{ cursorLiveMs !== null ? msLabel(cursorLiveMs) : '–' }}</div>
+        <div class="text-emerald-700 dark:text-emerald-300">{{ cursorLiveMs !== null ? msLabel(cursorLiveMs) : '–' }}</div>
       </div>
-      <div class="text-right text-neutral-400">
+      <div class="text-right text-neutral-600 dark:text-neutral-400">
         <div class="text-[10px] uppercase tracking-wide text-neutral-500">{{ t('waveform.remaining') }}</div>
-        <div class="text-neutral-200">{{ remainingMs !== null ? msLabel(remainingMs) : '–' }}</div>
+        <div class="text-neutral-800 dark:text-neutral-200">{{ remainingMs !== null ? msLabel(remainingMs) : '–' }}</div>
       </div>
     </div>
 
