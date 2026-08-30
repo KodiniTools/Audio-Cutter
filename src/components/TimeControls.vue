@@ -77,11 +77,11 @@ const canReset = computed(
 
 <template>
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-    <div class="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
-      <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-400">{{ t('time.start') }}</label>
+    <div class="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900/50">
+      <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-600 dark:text-neutral-400">{{ t('time.start') }}</label>
       <input
         v-model="startText"
-        class="w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 font-mono text-lg text-emerald-300 outline-none focus:border-emerald-500"
+        class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 font-mono text-lg text-emerald-700 outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-emerald-300"
         inputmode="decimal"
         :placeholder="t('time.placeholder')"
       />
@@ -93,7 +93,7 @@ const canReset = computed(
           :max="maxMs"
           step="1"
           :aria-label="t('time.start') + ' (ms)'"
-          class="w-32 rounded-md border border-neutral-700 bg-neutral-950 px-2 py-1 font-mono text-sm text-emerald-300 outline-none focus:border-emerald-500"
+          class="w-32 rounded-md border border-neutral-300 bg-white px-2 py-1 font-mono text-sm text-emerald-700 outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-emerald-300"
         />
         <span class="text-xs text-neutral-500">ms</span>
       </div>
@@ -101,7 +101,7 @@ const canReset = computed(
         <button
           v-for="d in nudges"
           :key="'s' + d"
-          class="rounded border border-neutral-700 px-2 py-1 font-mono text-xs text-neutral-300 hover:border-emerald-500 hover:text-emerald-300"
+          class="rounded border border-neutral-300 px-2 py-1 font-mono text-xs text-neutral-700 hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300"
           @click="nudgeStart(d)"
         >
           {{ fmtDelta(d) }}ms
@@ -109,11 +109,11 @@ const canReset = computed(
       </div>
     </div>
 
-    <div class="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
-      <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-400">{{ t('time.end') }}</label>
+    <div class="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900/50">
+      <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-600 dark:text-neutral-400">{{ t('time.end') }}</label>
       <input
         v-model="endText"
-        class="w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 font-mono text-lg text-emerald-300 outline-none focus:border-emerald-500"
+        class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 font-mono text-lg text-emerald-700 outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-emerald-300"
         inputmode="decimal"
         :placeholder="t('time.placeholder')"
       />
@@ -125,7 +125,7 @@ const canReset = computed(
           :max="maxMs"
           step="1"
           :aria-label="t('time.end') + ' (ms)'"
-          class="w-32 rounded-md border border-neutral-700 bg-neutral-950 px-2 py-1 font-mono text-sm text-emerald-300 outline-none focus:border-emerald-500"
+          class="w-32 rounded-md border border-neutral-300 bg-white px-2 py-1 font-mono text-sm text-emerald-700 outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-emerald-300"
         />
         <span class="text-xs text-neutral-500">ms</span>
       </div>
@@ -133,7 +133,7 @@ const canReset = computed(
         <button
           v-for="d in nudges"
           :key="'e' + d"
-          class="rounded border border-neutral-700 px-2 py-1 font-mono text-xs text-neutral-300 hover:border-emerald-500 hover:text-emerald-300"
+          class="rounded border border-neutral-300 px-2 py-1 font-mono text-xs text-neutral-700 hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300"
           @click="nudgeEnd(d)"
         >
           {{ fmtDelta(d) }}ms
@@ -141,18 +141,18 @@ const canReset = computed(
       </div>
     </div>
 
-    <div class="sm:col-span-2 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-neutral-900/30 px-4 py-2 text-sm">
-      <span class="text-neutral-400">
-        {{ t('time.selection') }} <span class="font-mono text-neutral-100">{{ formatMs(selectedDurationMs) }}</span>
+    <div class="sm:col-span-2 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-neutral-100 px-4 py-2 text-sm dark:bg-neutral-900/30">
+      <span class="text-neutral-600 dark:text-neutral-400">
+        {{ t('time.selection') }} <span class="font-mono text-neutral-900 dark:text-neutral-100">{{ formatMs(selectedDurationMs) }}</span>
         <span class="text-neutral-500"> / {{ formatMs(durationMs) }}</span>
       </span>
       <div class="flex items-center gap-3">
-        <span v-if="!regionValidation.valid && regionValidation.errorCode" class="font-medium text-amber-400">
+        <span v-if="!regionValidation.valid && regionValidation.errorCode" class="font-medium text-amber-600 dark:text-amber-400">
           {{ t(`validation.${regionValidation.errorCode}`) }}
         </span>
-        <span v-else-if="regionValidation.valid" class="text-emerald-400">{{ t('time.valid') }}</span>
+        <span v-else-if="regionValidation.valid" class="text-emerald-600 dark:text-emerald-400">{{ t('time.valid') }}</span>
         <button
-          class="inline-flex items-center gap-1 rounded-md border border-neutral-700 px-2.5 py-1 text-xs font-medium text-neutral-300 transition-colors hover:border-emerald-500 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-700 disabled:hover:text-neutral-300"
+          class="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2.5 py-1 text-xs font-medium text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-300 disabled:hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300 dark:disabled:hover:border-neutral-700 dark:disabled:hover:text-neutral-300"
           :disabled="!canReset"
           :title="t('time.reset')"
           @click="resetSelection"

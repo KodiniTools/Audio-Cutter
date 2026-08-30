@@ -3,4 +3,7 @@
 @tailwind utilities;
 
 html, body, #app { height: 100%; }
-body { margin: 0; background: #0a0a0a; }
+/* Body-Hintergrund folgt dem Theme (zeigt sich an den Raendern hinter
+   Nav/Footer). Light = Standard, Dark via [data-theme="dark"]. */
+body { margin: 0; background: #fafafa; }
+:root[data-theme="dark"] body { background: #0a0a0a; }

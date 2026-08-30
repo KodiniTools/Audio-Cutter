@@ -34,12 +34,12 @@ const formats: ExportFormat[] = ['wav', 'mp3']
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 rounded-xl border border-neutral-800 bg-neutral-900/50 p-4">
-    <h2 class="text-sm font-semibold text-neutral-100">{{ t('export.title') }}</h2>
+  <div class="flex flex-col gap-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900/50">
+    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ t('export.title') }}</h2>
 
     <!-- Verarbeitung -->
     <label class="block">
-      <span class="mb-1 block text-xs font-medium text-neutral-400">{{
+      <span class="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">{{
         t('export.processingLabel')
       }}</span>
       <div class="select-wrap">
@@ -57,7 +57,7 @@ const formats: ExportFormat[] = ['wav', 'mp3']
 
     <!-- Aktion -->
     <label class="block">
-      <span class="mb-1 block text-xs font-medium text-neutral-400">{{
+      <span class="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">{{
         t('export.cutModeLabel')
       }}</span>
       <div class="select-wrap">
@@ -75,7 +75,7 @@ const formats: ExportFormat[] = ['wav', 'mp3']
 
     <!-- Format -->
     <label class="block">
-      <span class="mb-1 block text-xs font-medium text-neutral-400">{{ t('export.format') }}</span>
+      <span class="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">{{ t('export.format') }}</span>
       <div class="select-wrap">
         <select
           class="select"
@@ -89,7 +89,7 @@ const formats: ExportFormat[] = ['wav', 'mp3']
 
     <!-- Bitrate (nur MP3) -->
     <div v-if="exportOptions.format === 'mp3'">
-      <label class="mb-1 block text-xs text-neutral-400">{{
+      <label class="mb-1 block text-xs text-neutral-600 dark:text-neutral-400">{{
         t('export.bitrate', { value: exportOptions.mp3Bitrate })
       }}</label>
       <input
@@ -110,13 +110,13 @@ const formats: ExportFormat[] = ['wav', 'mp3']
     <!-- Fades -->
     <div class="grid grid-cols-2 gap-3">
       <div>
-        <label class="mb-1 block text-xs text-neutral-400">{{ t('export.fadeIn') }}</label>
+        <label class="mb-1 block text-xs text-neutral-600 dark:text-neutral-400">{{ t('export.fadeIn') }}</label>
         <input
           type="number"
           min="0"
           step="10"
           :value="exportOptions.fadeInMs"
-          class="w-full rounded-md border border-neutral-700 bg-neutral-950 px-2 py-1 font-mono text-sm text-neutral-100 outline-none focus:border-emerald-500"
+          class="w-full rounded-md border border-neutral-300 bg-white px-2 py-1 font-mono text-sm text-neutral-900 outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100"
           @input="
             store.patchExportOptions({
               fadeInMs: Math.max(0, Number(($event.target as HTMLInputElement).value)),
@@ -125,13 +125,13 @@ const formats: ExportFormat[] = ['wav', 'mp3']
         />
       </div>
       <div>
-        <label class="mb-1 block text-xs text-neutral-400">{{ t('export.fadeOut') }}</label>
+        <label class="mb-1 block text-xs text-neutral-600 dark:text-neutral-400">{{ t('export.fadeOut') }}</label>
         <input
           type="number"
           min="0"
           step="10"
           :value="exportOptions.fadeOutMs"
-          class="w-full rounded-md border border-neutral-700 bg-neutral-950 px-2 py-1 font-mono text-sm text-neutral-100 outline-none focus:border-emerald-500"
+          class="w-full rounded-md border border-neutral-300 bg-white px-2 py-1 font-mono text-sm text-neutral-900 outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100"
           @input="
             store.patchExportOptions({
               fadeOutMs: Math.max(0, Number(($event.target as HTMLInputElement).value)),
@@ -145,7 +145,7 @@ const formats: ExportFormat[] = ['wav', 'mp3']
     <div class="flex flex-col gap-2 pt-1">
       <button
         v-if="!busy"
-        class="rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-medium text-neutral-950 transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400"
+        class="rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-medium text-neutral-950 transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:text-neutral-500 dark:disabled:bg-neutral-700 dark:disabled:text-neutral-400"
         :disabled="!canProcess"
         @click="emit('process')"
       >
@@ -153,7 +153,7 @@ const formats: ExportFormat[] = ['wav', 'mp3']
       </button>
       <button
         v-else
-        class="rounded-lg border border-neutral-600 px-4 py-2.5 text-sm font-medium text-neutral-200 hover:border-red-500 hover:text-red-400"
+        class="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-700 hover:border-red-500 hover:text-red-400 dark:border-neutral-600 dark:text-neutral-200"
         @click="emit('cancel')"
       >
         {{ t('export.cancel') }}
@@ -163,13 +163,13 @@ const formats: ExportFormat[] = ['wav', 'mp3']
 
       <template v-if="result">
         <button
-          class="rounded-lg border border-emerald-500 px-4 py-2.5 text-sm font-medium text-emerald-300 hover:bg-emerald-500/10"
+          class="rounded-lg border border-emerald-500 px-4 py-2.5 text-sm font-medium text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-300"
           @click="emit('download')"
         >
           ⬇ {{ t('export.download', { name: result.filename }) }}
         </button>
         <button
-          class="rounded-lg border border-neutral-700 px-4 py-2 text-sm font-medium text-neutral-300 transition-colors hover:border-red-500 hover:text-red-400"
+          class="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:border-red-500 hover:text-red-400 dark:border-neutral-700 dark:text-neutral-300"
           @click="emit('delete')"
         >
           🗑 {{ t('export.delete') }}
@@ -189,13 +189,19 @@ const formats: ExportFormat[] = ['wav', 'mp3']
   appearance: none;
   -webkit-appearance: none;
   border-radius: 0.375rem;
-  border: 1px solid rgb(64 64 64); /* neutral-700 */
-  background-color: rgb(10 10 10); /* neutral-950 */
+  border: 1px solid rgb(212 212 212); /* neutral-300 (light) */
+  background-color: #ffffff;
   padding: 0.5rem 2rem 0.5rem 0.75rem;
   font-size: 0.875rem;
-  color: rgb(245 245 245); /* neutral-100 */
+  color: rgb(23 23 23); /* neutral-900 (light) */
   outline: none;
   cursor: pointer;
+}
+/* Dark-Theme (Attribut auf <html>, daher als Vorfahren-Selektor). */
+[data-theme='dark'] .select {
+  border-color: rgb(64 64 64); /* neutral-700 */
+  background-color: rgb(10 10 10); /* neutral-950 */
+  color: rgb(245 245 245); /* neutral-100 */
 }
 .select:focus {
   border-color: rgb(16 185 129); /* emerald-500 */
