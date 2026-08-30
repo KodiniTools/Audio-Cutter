@@ -25,6 +25,10 @@ const en: MessageSchema = {
     browse: 'browse',
     formats: 'WAV, MP3, OGG, FLAC, M4A – processing stays local in your browser.',
   },
+  history: {
+    undo: 'Undo',
+    redo: 'Redo',
+  },
   waveform: {
     hint: 'Drag to select · drag the edges to fine-tune · Click = play point · Wheel = zoom · Shift+Wheel = pan',
     zoomIn: 'Zoom in',

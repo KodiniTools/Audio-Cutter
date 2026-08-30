@@ -25,6 +25,10 @@ export default {
     browse: 'auswählen',
     formats: 'WAV, MP3, OGG, FLAC, M4A – die Verarbeitung bleibt lokal im Browser.',
   },
+  history: {
+    undo: 'Rückgängig',
+    redo: 'Wiederherstellen',
+  },
   waveform: {
     hint: 'Ziehen zum Markieren · Ränder ziehen zum Feinjustieren · Klick = Abspielpunkt · Mausrad = Zoom · Shift+Mausrad = Verschieben',
     zoomIn: 'Reinzoomen',

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useAudioCutterStore } from '../stores/audioCutter'
@@ -303,7 +303,26 @@ function applyCursorAsEnd(): void {
   setPlayheadMs(cursorMs.value)
 }
 
+/** Tastatur: Strg/Cmd+Z = Rückgängig, Strg+Y bzw. Strg/Cmd+Shift+Z = Wiederherstellen.
+ *  In Textfeldern (Zeit-/ms-Eingaben) nicht die native Text-Undo/Redo kapern. */
+function onKeydown(e: KeyboardEvent): void {
+  if (!(e.ctrlKey || e.metaKey)) return
+  const el = e.target as HTMLElement | null
+  const tag = el?.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) return
+  const key = e.key.toLowerCase()
+  if (key === 'z' && !e.shiftKey) {
+    e.preventDefault()
+    store.undo()
+  } else if (key === 'y' || (key === 'z' && e.shiftKey)) {
+    e.preventDefault()
+    store.redo()
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
   player?.stop()
   abortController?.abort()
 })

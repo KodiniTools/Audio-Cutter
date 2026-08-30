@@ -9,7 +9,7 @@ import { formatMs } from '../utils/audioMath'
 
 const { t } = useI18n({ useScope: 'global' })
 const store = useAudioCutterStore()
-const { decoded, region, durationMs } = storeToRefs(store)
+const { decoded, region, durationMs, canUndo, canRedo } = storeToRefs(store)
 const { draw } = useWaveform()
 
 /** Der Nutzer hat per Klick einen Abspielpunkt (ms) gewaehlt. */
@@ -239,6 +239,32 @@ defineExpose({
   <div class="w-full">
     <!-- Zoom-Toolbar -->
     <div class="mb-2 flex items-center justify-between gap-1">
+      <div class="flex items-center gap-1">
+      <!-- Undo / Redo -->
+      <button
+        class="flex h-8 w-8 items-center justify-center rounded-md border border-neutral-300 text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-300 disabled:hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300 dark:disabled:hover:border-neutral-700 dark:disabled:hover:text-neutral-300"
+        :title="`${t('history.undo')} (Ctrl+Z)`"
+        :aria-label="t('history.undo')"
+        :disabled="!canUndo"
+        @click="store.undo()"
+      >
+        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 14 4 9l5-5" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 9h11a5 5 0 0 1 0 10h-2" />
+        </svg>
+      </button>
+      <button
+        class="flex h-8 w-8 items-center justify-center rounded-md border border-neutral-300 text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-300 disabled:hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300 dark:disabled:hover:border-neutral-700 dark:disabled:hover:text-neutral-300"
+        :title="`${t('history.redo')} (Ctrl+Y)`"
+        :aria-label="t('history.redo')"
+        :disabled="!canRedo"
+        @click="store.redo()"
+      >
+        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m15 14 5-5-5-5" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20 9H9a5 5 0 0 0 0 10h2" />
+        </svg>
+      </button>
       <!-- Optional: Sichtfenster folgt dem Marker (Standard aus) -->
       <button
         class="flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors"
@@ -255,6 +281,7 @@ defineExpose({
         </svg>
         {{ t('waveform.followMarker') }}
       </button>
+      </div>
 
       <div class="flex items-center gap-1">
       <button
