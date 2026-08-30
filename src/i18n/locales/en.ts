@@ -40,6 +40,8 @@ const en: MessageSchema = {
     pause: 'Pause',
     resume: 'Resume',
     stop: 'Stop',
+    toStart: 'To start',
+    toEnd: 'To end',
     preview: 'Preview',
     cursorAt: 'Cursor at',
     setStart: 'As start',

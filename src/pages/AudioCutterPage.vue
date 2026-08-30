@@ -98,6 +98,18 @@ function onSeek(ms: number): void {
   moveCursor(ms, false)
 }
 
+/** Pfeil links: Cursor an den Track-Anfang (0:00) setzen. */
+function cursorToStart(): void {
+  if (!decoded.value) return
+  moveCursor(0, true)
+}
+
+/** Pfeil rechts: Cursor an das Track-Ende setzen. */
+function cursorToEnd(): void {
+  if (!decoded.value) return
+  moveCursor(store.durationMs, true)
+}
+
 /** Seek aus Zahlenfeldern/Spinnern: Cursor ggf. ins Sichtfenster holen. */
 function onSeekReveal(ms: number): void {
   moveCursor(ms, true)
@@ -369,6 +381,28 @@ onBeforeUnmount(() => {
 
         <div class="flex flex-col items-center gap-3">
           <div class="flex items-center gap-3">
+            <!-- Zum Track-Anfang springen (Cursor auf 0:00) -->
+            <button
+              class="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-700 text-neutral-200 transition-colors hover:border-emerald-500 hover:text-emerald-300"
+              :title="t('player.toStart')"
+              :aria-label="t('player.toStart')"
+              @click="cursorToStart"
+            >
+              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
+                <path d="M7 5v14H5V5h2zm12 0v14l-9-7 9-7z" />
+              </svg>
+            </button>
+            <!-- Zum Track-Ende springen (Cursor auf Gesamtdauer) -->
+            <button
+              class="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-700 text-neutral-200 transition-colors hover:border-emerald-500 hover:text-emerald-300"
+              :title="t('player.toEnd')"
+              :aria-label="t('player.toEnd')"
+              @click="cursorToEnd"
+            >
+              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
+                <path d="M17 5v14h2V5h-2zM5 5v14l9-7-9-7z" />
+              </svg>
+            </button>
             <!-- Abspielen / Fortsetzen (wenn nicht gerade spielend) -->
             <button
               v-if="playState !== 'playing'"

@@ -40,6 +40,8 @@ export default {
     pause: 'Pause',
     resume: 'Fortsetzen',
     stop: 'Stopp',
+    toStart: 'Zum Anfang',
+    toEnd: 'Zum Ende',
     preview: 'Vorschau',
     cursorAt: 'Cursor bei',
     setStart: 'Als Anfang',
