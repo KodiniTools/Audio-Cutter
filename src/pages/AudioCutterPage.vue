@@ -12,6 +12,7 @@ import WaveformEditor from '../components/WaveformEditor.vue'
 import TimeControls from '../components/TimeControls.vue'
 import ExportPanel from '../components/ExportPanel.vue'
 import ProgressOverlay from '../components/ProgressOverlay.vue'
+import ShortcutsHelp from '../components/ShortcutsHelp.vue'
 
 const { t, te } = useI18n({ useScope: 'global' })
 const store = useAudioCutterStore()
@@ -20,6 +21,9 @@ const engine = useAudioEngine()
 
 const waveformRef = ref<InstanceType<typeof WaveformEditor> | null>(null)
 let abortController: AbortController | null = null
+
+/** Overlay mit der Tastenkürzel-/Touch-Übersicht (Taste „?"). */
+const showHelp = ref(false)
 
 // --- Wiedergabe (Vorschau) ---
 type PlayState = 'stopped' | 'playing' | 'paused'
@@ -303,20 +307,123 @@ function applyCursorAsEnd(): void {
   setPlayheadMs(cursorMs.value)
 }
 
-/** Tastatur: Strg/Cmd+Z = Rückgängig, Strg+Y bzw. Strg/Cmd+Shift+Z = Wiederherstellen.
- *  In Textfeldern (Zeit-/ms-Eingaben) nicht die native Text-Undo/Redo kapern. */
+/** Wiedergabe an-/aus (Space/K). */
+function togglePlay(): void {
+  if (!decoded.value) return
+  if (playState.value === 'playing') onPause()
+  else onPlay()
+}
+
+/** Cursor um deltaMs verschieben (Pfeiltasten). Live-Seek bei Wiedergabe. */
+function nudgeCursor(deltaMs: number): void {
+  if (!decoded.value) return
+  const base = cursorMs.value ?? region.value.startMs
+  const next = Math.max(0, Math.min(store.durationMs, base + deltaMs))
+  moveCursor(next, true)
+}
+
+/**
+ * Umfangreiche Tastenkürzel (Power-User). Textfelder werden nie gekapert
+ * (native Text-Bearbeitung/Undo bleibt erhalten); Strg/Cmd-Kürzel wirken
+ * überall ausserhalb von Feldern, Einzeltasten nicht auf fokussierten
+ * Bedienelementen (Button/Link behalten ihre native Aktivierung).
+ */
 function onKeydown(e: KeyboardEvent): void {
-  if (!(e.ctrlKey || e.metaKey)) return
   const el = e.target as HTMLElement | null
   const tag = el?.tagName
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) return
-  const key = e.key.toLowerCase()
-  if (key === 'z' && !e.shiftKey) {
+  const mod = e.ctrlKey || e.metaKey
+
+  // --- Strg/Cmd-Kombinationen ---
+  if (mod) {
+    const k = e.key.toLowerCase()
+    if (k === 'z' && !e.shiftKey) {
+      e.preventDefault()
+      store.undo()
+    } else if (k === 'y' || (k === 'z' && e.shiftKey)) {
+      e.preventDefault()
+      store.redo()
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (store.canProcess) onProcess()
+    }
+    return
+  }
+  if (e.altKey && !['ArrowLeft', 'ArrowRight'].includes(e.key)) return
+
+  // „?" öffnet die Übersicht immer (auch ohne geladene Datei).
+  if (e.key === '?') {
     e.preventDefault()
-    store.undo()
-  } else if (key === 'y' || (key === 'z' && e.shiftKey)) {
-    e.preventDefault()
-    store.redo()
+    showHelp.value = !showHelp.value
+    return
+  }
+  // Escape schliesst zuerst das Overlay.
+  if (e.key === 'Escape' && showHelp.value) {
+    showHelp.value = false
+    return
+  }
+  // Einzeltasten nicht auf fokussierten Buttons/Links (native Aktivierung).
+  if (tag === 'BUTTON' || tag === 'A') return
+  if (!hasAudio.value) return
+
+  const step = e.shiftKey ? 1000 : e.altKey ? 10 : 100
+  switch (e.key) {
+    case ' ':
+    case 'k':
+    case 'K':
+      e.preventDefault()
+      togglePlay()
+      break
+    case 'Enter':
+      e.preventDefault()
+      if (store.selectedDurationMs > 0) onPreview()
+      break
+    case 'Escape':
+      if (playState.value !== 'stopped') onStopPlayback()
+      break
+    case 'Home':
+      e.preventDefault()
+      cursorToStart()
+      break
+    case 'End':
+      e.preventDefault()
+      cursorToEnd()
+      break
+    case 'ArrowLeft':
+      e.preventDefault()
+      nudgeCursor(-step)
+      break
+    case 'ArrowRight':
+      e.preventDefault()
+      nudgeCursor(step)
+      break
+    case 's':
+    case 'S':
+      applyCursorAsStart()
+      break
+    case 'e':
+    case 'E':
+      applyCursorAsEnd()
+      break
+    case 'r':
+    case 'R':
+      store.setRegion(0, store.durationMs)
+      break
+    case '+':
+    case '=':
+      waveformRef.value?.zoomIn()
+      break
+    case '-':
+    case '_':
+      waveformRef.value?.zoomOut()
+      break
+    case '0':
+      waveformRef.value?.zoomReset()
+      break
+    case 'f':
+    case 'F':
+      waveformRef.value?.toggleFollow()
+      break
   }
 }
 
@@ -360,12 +467,22 @@ onBeforeUnmount(() => {
             {{ meta?.sampleRate }} Hz · {{ meta?.numberOfChannels }} {{ t('meta.channels') }} ·
             {{ formatMs(meta?.durationMs ?? 0) }}
           </span>
-          <button
-            class="text-xs text-neutral-600 underline hover:text-emerald-600 dark:text-neutral-400 dark:hover:text-emerald-400"
-            @click="store.reset()"
-          >
-            {{ t('meta.changeFile') }}
-          </button>
+          <div class="flex items-center gap-3">
+            <button
+              class="flex h-6 w-6 items-center justify-center rounded-md border border-neutral-300 text-xs font-semibold text-neutral-600 transition-colors hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300"
+              :title="`${t('shortcuts.open')} (?)`"
+              :aria-label="t('shortcuts.open')"
+              @click="showHelp = true"
+            >
+              ?
+            </button>
+            <button
+              class="text-xs text-neutral-600 underline hover:text-emerald-600 dark:text-neutral-400 dark:hover:text-emerald-400"
+              @click="store.reset()"
+            >
+              {{ t('meta.changeFile') }}
+            </button>
+          </div>
         </div>
 
         <WaveformEditor ref="waveformRef" @seek="onSeek" />
@@ -485,5 +602,8 @@ onBeforeUnmount(() => {
 
     <!-- Schneideprozess-Overlay mit Balken und Prozenten -->
     <ProgressOverlay @cancel="onCancel" />
+
+    <!-- Tastenkürzel-/Touch-Übersicht (Taste „?" oder Button in der Datei-Leiste) -->
+    <ShortcutsHelp :open="showHelp" @close="showHelp = false" />
   </div>
 </template>
