@@ -141,21 +141,59 @@ function onWheel(e: WheelEvent): void {
 }
 
 const HANDLE_PX = 8
+// Grössere Trefferzone für Finger (Touch): Ränder leichter greifbar.
+const TOUCH_HANDLE_PX = 22
+
+// --- Multi-Touch (Pinch-Zoom + Pan) ---
+// Aktive Zeiger (pointerId -> clientX). Zwei Finger = Pinch-Gastu.
+const pointers = new Map<number, number>()
+let pinching = false
+let pinchStartDist = 0
+let pinchStartZoom = 1
+let pinchStartAbsUnderMid = 0.5
+
+function beginPinch(): void {
+  const xs = [...pointers.values()]
+  const rect = canvasRef.value!.getBoundingClientRect()
+  pinchStartDist = Math.max(1, Math.abs(xs[0] - xs[1]))
+  pinchStartZoom = zoom.value
+  const midViewFrac = Math.max(0, Math.min(1, ((xs[0] + xs[1]) / 2 - rect.left) / rect.width))
+  pinchStartAbsUnderMid = viewToAbs(midViewFrac, win.value)
+  pinching = true
+  // Laufende Auswahl-Geste abbrechen (der erste Finger hatte evtl. schon gezogen).
+  dragging.value = null
+}
+
+function endPointer(e: PointerEvent): void {
+  pointers.delete(e.pointerId)
+  canvasRef.value?.releasePointerCapture(e.pointerId)
+  if (pointers.size < 2) pinching = false
+}
 
 function onPointerDown(e: PointerEvent): void {
   if (!store.hasAudio) return
   const canvas = canvasRef.value!
   canvas.setPointerCapture(e.pointerId)
+  pointers.set(e.pointerId, e.clientX)
+
+  // Zweiter Finger -> Pinch-Zoom starten (keine Auswahl).
+  if (pointers.size === 2) {
+    beginPinch()
+    return
+  }
+  if (pinching) return
+
   const rect = canvas.getBoundingClientRect()
   const xStart = absToView(regionStartFrac.value, win.value) * rect.width
   const xEnd = absToView(regionEndFrac.value, win.value) * rect.width
   const x = e.clientX - rect.left
+  const handlePx = e.pointerType === 'touch' ? TOUCH_HANDLE_PX : HANDLE_PX
 
   downX.value = x
   moved.value = false
 
-  if (Math.abs(x - xStart) <= HANDLE_PX) dragging.value = 'start'
-  else if (Math.abs(x - xEnd) <= HANDLE_PX) dragging.value = 'end'
+  if (Math.abs(x - xStart) <= handlePx) dragging.value = 'start'
+  else if (Math.abs(x - xEnd) <= handlePx) dragging.value = 'end'
   else {
     // Neue Auswahl: Anker merken, aber noch NICHTS setzen -> ein reiner Klick
     // (ohne Bewegung) laesst die bestehende Auswahl unangetastet.
@@ -165,6 +203,22 @@ function onPointerDown(e: PointerEvent): void {
 }
 
 function onPointerMove(e: PointerEvent): void {
+  if (pointers.has(e.pointerId)) pointers.set(e.pointerId, e.clientX)
+
+  // Pinch-Zoom: Abstand der Finger -> Zoom, Mittelpunkt bleibt fix (+ Pan).
+  if (pinching && pointers.size === 2) {
+    const xs = [...pointers.values()]
+    const rect = canvasRef.value!.getBoundingClientRect()
+    const dist = Math.max(1, Math.abs(xs[0] - xs[1]))
+    const newZoom = clampZoom(pinchStartZoom * (dist / pinchStartDist))
+    const midViewFrac = Math.max(0, Math.min(1, ((xs[0] + xs[1]) / 2 - rect.left) / rect.width))
+    const newWidth = 1 / newZoom
+    zoom.value = newZoom
+    viewCenterFrac.value = pinchStartAbsUnderMid - midViewFrac * newWidth + newWidth / 2
+    return
+  }
+  if (pinching) return
+
   const ms = xToMs(e.clientX)
   if (dragging.value) {
     const rect = canvasRef.value!.getBoundingClientRect()
@@ -180,14 +234,19 @@ function onPointerMove(e: PointerEvent): void {
 }
 
 function onPointerUp(e: PointerEvent): void {
-  if (dragging.value === 'new' && !moved.value && store.hasAudio) {
-    // Reiner Klick: Abspielpunkt setzen (Marker) und den Eltern-Container informieren.
+  if (!pinching && dragging.value === 'new' && !moved.value && store.hasAudio) {
+    // Reiner Klick/Tap: Abspielpunkt setzen (Marker) und Eltern informieren.
     const ms = xToMs(e.clientX)
     playhead.value = durationMs.value > 0 ? ms / durationMs.value : null
     emit('seek', ms)
   }
   dragging.value = null
-  canvasRef.value?.releasePointerCapture(e.pointerId)
+  endPointer(e)
+}
+
+function onPointerCancel(e: PointerEvent): void {
+  dragging.value = null
+  endPointer(e)
 }
 
 let ro: ResizeObserver | null = null
@@ -231,6 +290,13 @@ defineExpose({
     } else if (opts.follow && followMarker.value) {
       viewCenterFrac.value = frac
     }
+  },
+  // Zoom-/Ansicht-Steuerung für Tastatur-Shortcuts der Elternkomponente.
+  zoomIn,
+  zoomOut,
+  zoomReset,
+  toggleFollow: () => {
+    followMarker.value = !followMarker.value
   },
 })
 </script>
@@ -325,6 +391,7 @@ defineExpose({
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
+      @pointercancel="onPointerCancel"
       @wheel.prevent="onWheel"
     ></canvas>
 
