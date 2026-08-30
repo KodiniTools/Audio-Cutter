@@ -23,6 +23,7 @@ export default {
   dropzone: {
     dragHint: 'Audiodatei hierher ziehen oder',
     browse: 'auswählen',
+    paste: 'oder aus der Zwischenablage einfügen (Strg+V)',
     formats: 'WAV, MP3, OGG, FLAC, M4A – die Verarbeitung bleibt lokal im Browser.',
   },
   history: {
@@ -51,6 +52,7 @@ export default {
     undo: 'Rückgängig',
     redo: 'Wiederherstellen',
     process: 'Schneiden & Exportieren',
+    paste: 'Datei aus Zwischenablage einfügen',
     help: 'Diese Übersicht',
     touch: 'Touch-Gesten',
     touchTap: 'Tippen = Abspielpunkt setzen',
