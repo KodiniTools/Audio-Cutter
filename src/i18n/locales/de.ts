@@ -90,6 +90,7 @@ export default {
   errors: {
     decodeFailed: 'Datei konnte nicht dekodiert werden (nicht unterstütztes Format?).',
     emptyRegion: 'Ausgewählter Bereich ist leer.',
+    formatNotInBrowser: 'Dieses Format ist nur im Server-Modus verfügbar.',
     aborted: 'Abgebrochen.',
     noSourceFile: 'Keine Quelldatei für den Server-Modus vorhanden.',
     noDecodedData: 'Keine dekodierten Daten vorhanden.',

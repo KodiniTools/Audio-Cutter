@@ -6,6 +6,7 @@ import { useAudioCutterStore } from '../stores/audioCutter'
 import { useAudioEngine, type RegionPlayer } from '../composables/useAudioEngine'
 import { cutOnServer } from '../services/api'
 import { formatMs } from '../utils/audioMath'
+import { FORMAT_META } from '../utils/formats'
 import FileDropzone from '../components/FileDropzone.vue'
 import WaveformEditor from '../components/WaveformEditor.vue'
 import TimeControls from '../components/TimeControls.vue'
@@ -203,7 +204,7 @@ function onDelete(): void {
 async function onDownload(): Promise<void> {
   const r = store.result
   if (!r) return
-  const mime = r.format === 'wav' ? 'audio/wav' : 'audio/mpeg'
+  const fmt = FORMAT_META[r.format]
 
   // Moderne Browser: Speicherort + Name per Dialog waehlen (File System Access API).
   const picker = (
@@ -220,7 +221,7 @@ async function onDownload(): Promise<void> {
     try {
       const handle = await picker({
         suggestedName: r.filename,
-        types: [{ description: r.format.toUpperCase(), accept: { [mime]: [`.${r.format}`] } }],
+        types: [{ description: fmt.label, accept: { [fmt.mime]: [`.${fmt.ext}`] } }],
       })
       const writable = await handle.createWritable()
       await writable.write(r.blob)

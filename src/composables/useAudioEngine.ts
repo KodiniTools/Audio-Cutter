@@ -97,6 +97,11 @@ export function useAudioEngine() {
     const durationMs = (sliced[0].length / sampleRate) * 1000
     const stem = baseName.replace(/\.[^.]+$/, '') || 'audio'
 
+    // Der Browser-Modus kodiert nur WAV + MP3; alles Übrige liefert der Server.
+    if (options.format !== 'wav' && options.format !== 'mp3') {
+      throw new Error('formatNotInBrowser')
+    }
+
     if (options.format === 'wav') {
       const wav = encodeWav(sliced, sampleRate)
       onProgress?.(1)

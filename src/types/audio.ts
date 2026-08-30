@@ -2,7 +2,9 @@
 // Zentrale Typdefinitionen für den Audio-Schneider.
 
 export type ProcessingMode = 'browser' | 'server'
-export type ExportFormat = 'wav' | 'mp3'
+// Browser-Modus (lokal) kann nur WAV + MP3 kodieren; die übrigen Formate
+// liefert ausschliesslich der Server-Modus (FFmpeg). Siehe utils/formats.ts.
+export type ExportFormat = 'wav' | 'mp3' | 'ogg' | 'aac' | 'webm' | 'flac'
 export type Status = 'idle' | 'decoding' | 'processing' | 'done' | 'error'
 /** 'keep' = Auswahl behalten (Standard), 'remove' = Auswahl aus dem Track entfernen. */
 export type CutMode = 'keep' | 'remove'
@@ -33,7 +35,7 @@ export interface CutRegion {
 /** Export-Einstellungen. */
 export interface ExportOptions {
   format: ExportFormat
-  /** Nur für MP3 relevant (kbps). */
+  /** Ziel-Bitrate (kbps) für verlustbehaftete Formate (MP3, OGG, AAC, WebM). */
   mp3Bitrate: number
   fadeInMs: number
   fadeOutMs: number

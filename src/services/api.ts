@@ -2,6 +2,7 @@
 // Client für den Server-Modus. XHR statt fetch, um Upload-Fortschritt zu erhalten.
 
 import type { CutResult, ExportOptions } from '../types/audio'
+import { FORMAT_META } from '../utils/formats'
 
 export interface ServerCutParams {
   file: File
@@ -76,7 +77,7 @@ export function cutOnServer(
       if (xhr.status >= 200 && xhr.status < 300) {
         const blob = xhr.response as Blob
         const stem = file.name.replace(/\.[^.]+$/, '') || 'audio'
-        const fallback = `${stem}_cut.${options.format}`
+        const fallback = `${stem}_cut.${FORMAT_META[options.format].ext}`
         const filename = filenameFromDisposition(
           xhr.getResponseHeader('Content-Disposition'),
           fallback,

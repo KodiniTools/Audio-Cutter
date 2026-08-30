@@ -19,6 +19,25 @@ const MAX_CONCURRENT = Number(process.env.MAX_CONCURRENT) || 2
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://kodinitools.com'
 const FFMPEG_TIMEOUT_MS = Number(process.env.FFMPEG_TIMEOUT_MS) || 180_000
 
+// Export-Formate -> FFmpeg-Codec/Container + Ausgabe-Metadaten.
+// Voraussetzung: ffmpeg-Build mit libmp3lame, libvorbis, libopus, aac, flac
+// (Standard bei `apt install ffmpeg`).
+const FORMATS = {
+  wav: { codec: 'pcm_s16le', container: 'wav', mime: 'audio/wav', ext: 'wav', lossy: false },
+  mp3: { codec: 'libmp3lame', container: 'mp3', mime: 'audio/mpeg', ext: 'mp3', lossy: true },
+  ogg: { codec: 'libvorbis', container: 'ogg', mime: 'audio/ogg', ext: 'ogg', lossy: true },
+  aac: {
+    codec: 'aac',
+    container: 'mp4',
+    mime: 'audio/mp4',
+    ext: 'm4a',
+    lossy: true,
+    outputOptions: ['-movflags', '+faststart'],
+  },
+  webm: { codec: 'libopus', container: 'webm', mime: 'audio/webm', ext: 'webm', lossy: true },
+  flac: { codec: 'flac', container: 'flac', mime: 'audio/flac', ext: 'flac', lossy: false },
+}
+
 const app = express()
 app.use(cors({ origin: CORS_ORIGIN }))
 
@@ -76,8 +95,8 @@ app.post('/cut', upload.single('file'), async (req, res) => {
   }
 
   try {
-    const format = req.body.format === 'mp3' ? 'mp3' : 'wav'
-    const mp3Bitrate = Math.min(320, Math.max(96, Math.round(num(req.body.mp3Bitrate, 192))))
+    const fmt = FORMATS[req.body.format] || FORMATS.wav
+    const bitrate = Math.min(320, Math.max(96, Math.round(num(req.body.mp3Bitrate, 192))))
     const startMs = Math.max(0, num(req.body.startMs, 0))
     let endMs = Math.max(0, num(req.body.endMs, 0))
     const fadeInMs = Math.max(0, num(req.body.fadeInMs, 0))
@@ -112,7 +131,7 @@ app.post('/cut', upload.single('file'), async (req, res) => {
     }
 
     workDir = await mkdtemp(join(tmpdir(), 'audiocut-'))
-    const outName = `cut_${randomUUID()}.${format}`
+    const outName = `cut_${randomUUID()}.${fmt.ext}`
     const outputPath = join(workDir, outName)
 
     await new Promise((resolve, reject) => {
@@ -155,11 +174,10 @@ app.post('/cut', upload.single('file'), async (req, res) => {
         if (filters.length) command.audioFilters(filters)
       }
 
-      if (format === 'wav') {
-        command.audioCodec('pcm_s16le').format('wav')
-      } else {
-        command.audioCodec('libmp3lame').audioBitrate(mp3Bitrate).format('mp3')
-      }
+      command.audioCodec(fmt.codec)
+      if (fmt.lossy) command.audioBitrate(bitrate)
+      if (fmt.outputOptions) command.outputOptions(fmt.outputOptions)
+      command.format(fmt.container)
 
       const timer = setTimeout(() => {
         command.kill('SIGKILL')
@@ -185,8 +203,8 @@ app.post('/cut', upload.single('file'), async (req, res) => {
     }
 
     const info = await stat(outputPath)
-    const downloadName = buildDownloadName(req.file.originalname, format)
-    res.setHeader('Content-Type', format === 'wav' ? 'audio/wav' : 'audio/mpeg')
+    const downloadName = buildDownloadName(req.file.originalname, fmt.ext)
+    res.setHeader('Content-Type', fmt.mime)
     res.setHeader('Content-Length', String(info.size))
     res.setHeader(
       'Content-Disposition',
@@ -222,9 +240,9 @@ app.listen(PORT, '127.0.0.1', () => {
 async function safeUnlink(path) {
   await rm(path, { force: true }).catch(() => {})
 }
-function buildDownloadName(original, format) {
+function buildDownloadName(original, ext) {
   const stem = (original || 'audio').replace(/\.[^.]+$/, '').replace(/[/\\]/g, '_') || 'audio'
-  return `${stem}_cut.${format}`
+  return `${stem}_cut.${ext}`
 }
 function asciiName(name) {
   // Fallback-Dateiname ohne Nicht-ASCII (RFC 6266).
