@@ -1,0 +1,7 @@
+# robots.txt für den Audio-Schneider (kodinitools.com/audio-cutter/)
+# Hinweis: Die autoritative robots.txt liegt im Domain-Root; diese Datei
+# dient dem Tool-Verzeichnis und verweist auf die Sitemap.
+User-agent: *
+Allow: /
+
+Sitemap: https://kodinitools.com/audio-cutter/sitemap.xml
