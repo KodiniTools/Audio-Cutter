@@ -90,6 +90,7 @@ const en: MessageSchema = {
   errors: {
     decodeFailed: 'File could not be decoded (unsupported format?).',
     emptyRegion: 'The selected range is empty.',
+    formatNotInBrowser: 'This format is only available in server mode.',
     aborted: 'Cancelled.',
     noSourceFile: 'No source file available for server mode.',
     noDecodedData: 'No decoded data available.',

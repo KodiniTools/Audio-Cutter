@@ -14,6 +14,7 @@ import type {
   Status,
 } from '../types/audio'
 import { clamp, validateRegion } from '../utils/audioMath'
+import { FORMAT_META } from '../utils/formats'
 
 export const useAudioCutterStore = defineStore('audioCutter', () => {
   // --- State ---
@@ -92,6 +93,11 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
 
   function setMode(m: ProcessingMode): void {
     mode.value = m
+    // Server-only-Format (z. B. OGG/AAC/WebM/FLAC) im Browser-Modus nicht
+    // zulassen -> auf WAV zurückfallen.
+    if (m === 'browser' && !FORMAT_META[exportOptions.value.format].browser) {
+      exportOptions.value = { ...exportOptions.value, format: 'wav' }
+    }
   }
 
   function patchExportOptions(patch: Partial<ExportOptions>): void {

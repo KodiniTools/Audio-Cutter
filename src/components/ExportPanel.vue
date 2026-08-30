@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useAudioCutterStore } from '../stores/audioCutter'
 import type { CutMode, ExportFormat, ProcessingMode } from '../types/audio'
+import { FORMAT_META, formatsForMode } from '../utils/formats'
 
 const { t } = useI18n({ useScope: 'global' })
 const store = useAudioCutterStore()
@@ -30,7 +31,11 @@ function setCutMode(m: CutMode): void {
 
 const modes: ProcessingMode[] = ['browser', 'server']
 const cutModes: CutMode[] = ['keep', 'remove']
-const formats: ExportFormat[] = ['wav', 'mp3']
+// Im Browser-Modus nur WAV/MP3, im Server-Modus alle Formate.
+const formats = computed<ExportFormat[]>(() => formatsForMode(mode.value))
+const formatLabel = (f: ExportFormat): string => FORMAT_META[f].label
+// Bitrate nur für verlustbehaftete Formate anzeigen (MP3, OGG, AAC, WebM).
+const showBitrate = computed(() => FORMAT_META[exportOptions.value.format].lossy)
 </script>
 
 <template>
@@ -82,13 +87,13 @@ const formats: ExportFormat[] = ['wav', 'mp3']
           :value="exportOptions.format"
           @change="setFormat(($event.target as HTMLSelectElement).value as ExportFormat)"
         >
-          <option v-for="f in formats" :key="f" :value="f">{{ f.toUpperCase() }}</option>
+          <option v-for="f in formats" :key="f" :value="f">{{ formatLabel(f) }}</option>
         </select>
       </div>
     </label>
 
-    <!-- Bitrate (nur MP3) -->
-    <div v-if="exportOptions.format === 'mp3'">
+    <!-- Bitrate (nur verlustbehaftete Formate) -->
+    <div v-if="showBitrate">
       <label class="mb-1 block text-xs text-neutral-600 dark:text-neutral-400">{{
         t('export.bitrate', { value: exportOptions.mp3Bitrate })
       }}</label>
