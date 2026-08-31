@@ -67,6 +67,7 @@ export default {
     zoomReset: 'Zoom zurücksetzen',
     followMarker: 'Marker folgen',
     total: 'Gesamtdauer',
+    selection: 'Auswahl',
     cursor: 'Cursor',
     remaining: 'Restdauer',
   },
