@@ -2,6 +2,8 @@
 // Reine Funktionen zum sample-genauen Schneiden und für Fades.
 // Arbeiten auf Float32Array[] (ein Array pro Kanal) – kein Web-Audio-Objekt nötig.
 
+import type { CutMode } from '../types/audio'
+
 /**
  * Schneidet alle Kanäle auf [startSample, endSample).
  * Indizes werden defensiv auf gültige Grenzen geklemmt.
@@ -69,6 +71,30 @@ export function applyFade(
       ch[idx] *= i / fadeOut
     }
   }
+}
+
+/**
+ * Ein vollständiger Schnitt auf Kanaldaten: wählt den Bereich (behalten oder
+ * entfernen) und legt anschliessend die Fades an. Erzeugt stets FRISCHE Arrays
+ * (slice/removeRegion kopieren), sodass die Eingabe unverändert bleibt – die
+ * Grundlage des kumulativen Schneidens (jeder Schnitt = neuer Puffer, alte
+ * Puffer bleiben für Undo/Redo erhalten).
+ */
+export function cutChannels(
+  channels: Float32Array[],
+  sampleRate: number,
+  startSample: number,
+  endSample: number,
+  cutMode: CutMode,
+  fadeInMs: number,
+  fadeOutMs: number,
+): Float32Array[] {
+  const cut =
+    cutMode === 'remove'
+      ? removeRegion(channels, startSample, endSample)
+      : sliceChannels(channels, startSample, endSample)
+  applyFade(cut, sampleRate, fadeInMs, fadeOutMs)
+  return cut
 }
 
 /** Float32 [-1,1] -> Int16 PCM (mit Clipping-Schutz). */

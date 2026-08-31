@@ -8,8 +8,15 @@ Zwei Verarbeitungsmodi:
   WAV (verlustfrei) oder MP3 (via `lamejs`) exportiert. **Kein Upload.**
   Das MP3-Encoding läuft in einem **Web Worker** (Main-Thread bleibt frei),
   mit echtem Fortschritt und Abbruch.
-- **Server (optional):** Upload an ein Node/Express-Backend, das mit **FFmpeg**
-  schneidet (`-ss` + Re-Encode = ms-genau). Für sehr große Dateien / schwache Geräte.
+- **Server (optional):** Der (bereits geschnittene) Puffer wird als WAV an ein
+  Node/Express-Backend hochgeladen, das mit **FFmpeg** in erweiterte Formate
+  (OGG/AAC/WebM/FLAC) transkodiert. Für Formate jenseits von WAV/MP3.
+
+**Kumulatives Schneiden:** Jeder Schnitt wendet die gewählte Aktion
+(behalten/entfernen + Fades) auf den **aktuell bearbeiteten Puffer** an – nicht auf
+das Original – und aktualisiert die Waveform. Schnitte lassen sich beliebig oft
+verketten; jeder Schnitt ist ein eigener Undo-Schritt (`↩`/`↪`). Der Export ist erst
+aktiv, sobald mindestens ein Schnitt existiert, und encodiert den finalen Puffer.
 
 ## Stack
 
@@ -27,7 +34,7 @@ src/utils/sliceBuffer.ts   sample-genaues Schneiden + lineare Fades          (pu
 src/utils/wavEncoder.ts    16-bit-PCM-WAV-Encoder                            (pure)
 src/utils/waveform.ts      Min/Max-Peaks pro Pixel                           (pure)
 src/utils/mp3Encoder.ts    MP3-Block-Encoding, Encoder injizierbar           (pure)
-src/composables/useAudioEngine.ts   decode/cut/encode (Web Audio + lamejs)   (Browser)
+src/composables/useAudioEngine.ts   decode/encode/toWav (Web Audio + lamejs)  (Browser)
 src/composables/useMp3Worker.ts     Worker-Wrapper (Promise/Progress/Abort)  (Browser)
 src/composables/useWaveform.ts      Canvas-Rendering                         (Browser)
 src/workers/mp3.worker.ts  lamejs-Encoding im Worker-Thread
@@ -39,7 +46,7 @@ src/pages/AudioCutterPage.vue        Orchestrierung + Sprachumschalter
 server/index.js            FFmpeg-Backend
 ```
 
-**MP3-Worker:** `useAudioEngine.cut()` lagert das Encoding an `mp3.worker.ts` aus
+**MP3-Worker:** `useAudioEngine.encode()` lagert das Encoding an `mp3.worker.ts` aus
 (Kanaldaten werden per Transfer übergeben – kein Kopieren). Fällt bei fehlender
 Worker-Unterstützung auf synchrones Encoding zurück. Die reine Block-Logik
 (`utils/mp3Encoder.ts`) ist ohne `lamejs`-Import via injiziertem Encoder testbar.

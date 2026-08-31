@@ -8,16 +8,16 @@ import { FORMAT_META, formatsForMode } from '../utils/formats'
 
 const { t } = useI18n({ useScope: 'global' })
 const store = useAudioCutterStore()
-const { mode, exportOptions, status, error, result, canProcess } = storeToRefs(store)
+const { mode, exportOptions, error, result, busy, canCut, canExport, hasEdits } =
+  storeToRefs(store)
 
 const emit = defineEmits<{
-  (e: 'process'): void
+  (e: 'cut'): void
+  (e: 'export'): void
   (e: 'cancel'): void
   (e: 'download'): void
   (e: 'delete'): void
 }>()
-
-const busy = computed(() => status.value === 'processing' || status.value === 'decoding')
 
 function setMode(m: ProcessingMode): void {
   store.setMode(m)
@@ -39,147 +39,165 @@ const showBitrate = computed(() => FORMAT_META[exportOptions.value.format].lossy
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900/50">
-    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ t('export.title') }}</h2>
+  <div class="flex flex-col gap-4">
+    <!-- ===== Schnitt (kumulativ: wirkt auf den bearbeiteten Puffer) ===== -->
+    <div class="flex flex-col gap-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900/50">
+      <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ t('export.cutTitle') }}</h2>
 
-    <!-- Verarbeitung -->
-    <label class="block">
-      <span class="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">{{
-        t('export.processingLabel')
-      }}</span>
-      <div class="select-wrap">
-        <select
-          class="select"
-          :value="mode"
-          @change="setMode(($event.target as HTMLSelectElement).value as ProcessingMode)"
-        >
-          <option v-for="m in modes" :key="m" :value="m">
-            {{ t(`export.modes.${m}.label`) }}
-          </option>
-        </select>
+      <!-- Aktion -->
+      <label class="block">
+        <span class="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">{{
+          t('export.cutModeLabel')
+        }}</span>
+        <div class="select-wrap">
+          <select
+            class="select"
+            :value="exportOptions.cutMode"
+            @change="setCutMode(($event.target as HTMLSelectElement).value as CutMode)"
+          >
+            <option v-for="m in cutModes" :key="m" :value="m">
+              {{ t(`export.cutModes.${m}.label`) }}
+            </option>
+          </select>
+        </div>
+      </label>
+
+      <!-- Fades -->
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="mb-1 block text-xs text-neutral-600 dark:text-neutral-400">{{ t('export.fadeIn') }}</label>
+          <input
+            type="number"
+            min="0"
+            step="10"
+            :value="exportOptions.fadeInMs"
+            class="w-full rounded-md border border-neutral-300 bg-white px-2 py-1 font-mono text-sm text-neutral-900 outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100"
+            @input="
+              store.patchExportOptions({
+                fadeInMs: Math.max(0, Number(($event.target as HTMLInputElement).value)),
+              })
+            "
+          />
+        </div>
+        <div>
+          <label class="mb-1 block text-xs text-neutral-600 dark:text-neutral-400">{{ t('export.fadeOut') }}</label>
+          <input
+            type="number"
+            min="0"
+            step="10"
+            :value="exportOptions.fadeOutMs"
+            class="w-full rounded-md border border-neutral-300 bg-white px-2 py-1 font-mono text-sm text-neutral-900 outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100"
+            @input="
+              store.patchExportOptions({
+                fadeOutMs: Math.max(0, Number(($event.target as HTMLInputElement).value)),
+              })
+            "
+          />
+        </div>
       </div>
-    </label>
 
-    <!-- Aktion -->
-    <label class="block">
-      <span class="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">{{
-        t('export.cutModeLabel')
-      }}</span>
-      <div class="select-wrap">
-        <select
-          class="select"
-          :value="exportOptions.cutMode"
-          @change="setCutMode(($event.target as HTMLSelectElement).value as CutMode)"
-        >
-          <option v-for="m in cutModes" :key="m" :value="m">
-            {{ t(`export.cutModes.${m}.label`) }}
-          </option>
-        </select>
-      </div>
-    </label>
-
-    <!-- Format -->
-    <label class="block">
-      <span class="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">{{ t('export.format') }}</span>
-      <div class="select-wrap">
-        <select
-          class="select"
-          :value="exportOptions.format"
-          @change="setFormat(($event.target as HTMLSelectElement).value as ExportFormat)"
-        >
-          <option v-for="f in formats" :key="f" :value="f">{{ formatLabel(f) }}</option>
-        </select>
-      </div>
-    </label>
-
-    <!-- Bitrate (nur verlustbehaftete Formate) -->
-    <div v-if="showBitrate">
-      <label class="mb-1 block text-xs text-neutral-600 dark:text-neutral-400">{{
-        t('export.bitrate', { value: exportOptions.mp3Bitrate })
-      }}</label>
-      <input
-        type="range"
-        min="96"
-        max="320"
-        step="32"
-        :value="exportOptions.mp3Bitrate"
-        class="w-full accent-emerald-500"
-        @input="
-          store.patchExportOptions({
-            mp3Bitrate: Number(($event.target as HTMLInputElement).value),
-          })
-        "
-      />
-    </div>
-
-    <!-- Fades -->
-    <div class="grid grid-cols-2 gap-3">
-      <div>
-        <label class="mb-1 block text-xs text-neutral-600 dark:text-neutral-400">{{ t('export.fadeIn') }}</label>
-        <input
-          type="number"
-          min="0"
-          step="10"
-          :value="exportOptions.fadeInMs"
-          class="w-full rounded-md border border-neutral-300 bg-white px-2 py-1 font-mono text-sm text-neutral-900 outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100"
-          @input="
-            store.patchExportOptions({
-              fadeInMs: Math.max(0, Number(($event.target as HTMLInputElement).value)),
-            })
-          "
-        />
-      </div>
-      <div>
-        <label class="mb-1 block text-xs text-neutral-600 dark:text-neutral-400">{{ t('export.fadeOut') }}</label>
-        <input
-          type="number"
-          min="0"
-          step="10"
-          :value="exportOptions.fadeOutMs"
-          class="w-full rounded-md border border-neutral-300 bg-white px-2 py-1 font-mono text-sm text-neutral-900 outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100"
-          @input="
-            store.patchExportOptions({
-              fadeOutMs: Math.max(0, Number(($event.target as HTMLInputElement).value)),
-            })
-          "
-        />
-      </div>
-    </div>
-
-    <!-- Aktion -->
-    <div class="flex flex-col gap-2 pt-1">
       <button
-        v-if="!busy"
         class="rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-medium text-neutral-950 transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:text-neutral-500 dark:disabled:bg-neutral-700 dark:disabled:text-neutral-400"
-        :disabled="!canProcess"
-        @click="emit('process')"
+        :disabled="!canCut"
+        @click="emit('cut')"
       >
-        {{ t('export.submit') }}
+        {{ t('export.cut') }}
       </button>
-      <button
-        v-else
-        class="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-700 hover:border-red-500 hover:text-red-400 dark:border-neutral-600 dark:text-neutral-200"
-        @click="emit('cancel')"
-      >
-        {{ t('export.cancel') }}
-      </button>
+      <p class="text-xs text-neutral-500">{{ t('export.cutHint') }}</p>
+    </div>
 
-      <p v-if="error" class="text-sm text-red-400">{{ error }}</p>
+    <!-- ===== Export (encodiert den finalen Puffer) ===== -->
+    <div class="flex flex-col gap-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900/50">
+      <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ t('export.title') }}</h2>
 
-      <template v-if="result">
+      <!-- Verarbeitung -->
+      <label class="block">
+        <span class="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">{{
+          t('export.processingLabel')
+        }}</span>
+        <div class="select-wrap">
+          <select
+            class="select"
+            :value="mode"
+            @change="setMode(($event.target as HTMLSelectElement).value as ProcessingMode)"
+          >
+            <option v-for="m in modes" :key="m" :value="m">
+              {{ t(`export.modes.${m}.label`) }}
+            </option>
+          </select>
+        </div>
+      </label>
+
+      <!-- Format -->
+      <label class="block">
+        <span class="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">{{ t('export.format') }}</span>
+        <div class="select-wrap">
+          <select
+            class="select"
+            :value="exportOptions.format"
+            @change="setFormat(($event.target as HTMLSelectElement).value as ExportFormat)"
+          >
+            <option v-for="f in formats" :key="f" :value="f">{{ formatLabel(f) }}</option>
+          </select>
+        </div>
+      </label>
+
+      <!-- Bitrate (nur verlustbehaftete Formate) -->
+      <div v-if="showBitrate">
+        <label class="mb-1 block text-xs text-neutral-600 dark:text-neutral-400">{{
+          t('export.bitrate', { value: exportOptions.mp3Bitrate })
+        }}</label>
+        <input
+          type="range"
+          min="96"
+          max="320"
+          step="32"
+          :value="exportOptions.mp3Bitrate"
+          class="w-full accent-emerald-500"
+          @input="
+            store.patchExportOptions({
+              mp3Bitrate: Number(($event.target as HTMLInputElement).value),
+            })
+          "
+        />
+      </div>
+
+      <!-- Aktion -->
+      <div class="flex flex-col gap-2 pt-1">
         <button
-          class="rounded-lg border border-emerald-500 px-4 py-2.5 text-sm font-medium text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-300"
-          @click="emit('download')"
+          v-if="!busy"
+          class="rounded-lg border border-emerald-500 px-4 py-2.5 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:border-neutral-300 disabled:text-neutral-400 disabled:hover:bg-transparent dark:text-emerald-300 dark:disabled:border-neutral-700 dark:disabled:text-neutral-500"
+          :disabled="!canExport"
+          @click="emit('export')"
         >
-          ⬇ {{ t('export.download', { name: result.filename }) }}
+          {{ t('export.submit') }}
         </button>
         <button
-          class="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:border-red-500 hover:text-red-400 dark:border-neutral-700 dark:text-neutral-300"
-          @click="emit('delete')"
+          v-else
+          class="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-700 hover:border-red-500 hover:text-red-400 dark:border-neutral-600 dark:text-neutral-200"
+          @click="emit('cancel')"
         >
-          🗑 {{ t('export.delete') }}
+          {{ t('export.cancel') }}
         </button>
-      </template>
+
+        <p v-if="!hasEdits && !busy" class="text-xs text-neutral-500">{{ t('export.noEdits') }}</p>
+        <p v-if="error" class="text-sm text-red-400">{{ error }}</p>
+
+        <template v-if="result">
+          <button
+            class="rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-medium text-neutral-950 transition-colors hover:bg-emerald-400"
+            @click="emit('download')"
+          >
+            ⬇ {{ t('export.download', { name: result.filename }) }}
+          </button>
+          <button
+            class="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:border-red-500 hover:text-red-400 dark:border-neutral-700 dark:text-neutral-300"
+            @click="emit('delete')"
+          >
+            🗑 {{ t('export.delete') }}
+          </button>
+        </template>
+      </div>
     </div>
   </div>
 </template>
