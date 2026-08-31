@@ -67,6 +67,7 @@ const en: MessageSchema = {
     zoomReset: 'Reset zoom',
     followMarker: 'Follow marker',
     total: 'Total duration',
+    selection: 'Selection',
     cursor: 'Cursor',
     remaining: 'Remaining',
   },

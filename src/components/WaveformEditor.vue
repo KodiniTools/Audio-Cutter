@@ -9,7 +9,7 @@ import { formatMs } from '../utils/audioMath'
 
 const { t } = useI18n({ useScope: 'global' })
 const store = useAudioCutterStore()
-const { decoded, region, durationMs, canUndo, canRedo } = storeToRefs(store)
+const { decoded, region, durationMs, selectedDurationMs, canUndo, canRedo } = storeToRefs(store)
 const { draw } = useWaveform()
 
 /** Der Nutzer hat per Klick einen Abspielpunkt (ms) gewaehlt. */
@@ -395,11 +395,15 @@ defineExpose({
       @wheel.prevent="onWheel"
     ></canvas>
 
-    <!-- Live-Werte: Gesamtdauer (links) · Cursor (Mitte) · Restdauer (rechts) -->
+    <!-- Live-Werte: Gesamtdauer · Auswahl · Cursor · Restdauer (live) -->
     <div class="mt-2 flex items-start justify-between gap-2 font-mono text-xs">
       <div class="text-left text-neutral-600 dark:text-neutral-400">
         <div class="text-[10px] uppercase tracking-wide text-neutral-500">{{ t('waveform.total') }}</div>
         <div class="text-neutral-800 dark:text-neutral-200">{{ msLabel(durationMs) }}</div>
+      </div>
+      <div class="text-center">
+        <div class="text-[10px] uppercase tracking-wide text-neutral-500">{{ t('waveform.selection') }}</div>
+        <div class="text-emerald-700 dark:text-emerald-300">{{ msLabel(selectedDurationMs) }}</div>
       </div>
       <div class="text-center">
         <div class="text-[10px] uppercase tracking-wide text-neutral-500">{{ t('waveform.cursor') }}</div>
