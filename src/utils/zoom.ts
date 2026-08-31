@@ -36,3 +36,15 @@ export function viewToAbs(viewFrac: number, win: ViewWindow): number {
 export function absToView(absFrac: number, win: ViewWindow): number {
   return win.width > 0 ? (absFrac - win.start) / win.width : 0
 }
+
+/**
+ * Center-Frac, sodass das Fenster bei `startFrac` beginnt (fuer Scrollbar/Pan).
+ * `startFrac` wird auf einen gueltigen Bereich [0, 1-width] geklemmt, damit
+ * das Fenster nie ueber die Raender hinauslaeuft.
+ */
+export function centerForStart(startFrac: number, zoom: number): number {
+  const width = 1 / clampZoom(zoom)
+  const s = Number.isFinite(startFrac) ? startFrac : 0
+  const clamped = Math.max(0, Math.min(1 - width, s))
+  return clamped + width / 2
+}

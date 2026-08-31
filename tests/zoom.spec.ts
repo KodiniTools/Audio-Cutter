@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { absToView, clampZoom, viewToAbs, viewWindow } from '../src/utils/zoom'
+import { absToView, centerForStart, clampZoom, viewToAbs, viewWindow } from '../src/utils/zoom'
 
 describe('clampZoom', () => {
   it('begrenzt auf [1, max]', () => {
@@ -56,5 +56,29 @@ describe('viewToAbs / absToView', () => {
     const w = viewWindow(4, 0.5) // sichtbar 0.375..0.625
     expect(absToView(0.1, w)).toBeLessThan(0)
     expect(absToView(0.9, w)).toBeGreaterThan(1)
+  })
+})
+
+describe('centerForStart', () => {
+  it('legt das Fenster genau an startFrac (Scrollbar-Drag)', () => {
+    const center = centerForStart(0.2, 4) // Breite 0.25
+    const w = viewWindow(4, center)
+    expect(w.start).toBeCloseTo(0.2)
+    expect(w.end).toBeCloseTo(0.45)
+  })
+
+  it('klemmt am linken Rand', () => {
+    const center = centerForStart(-0.5, 4)
+    expect(viewWindow(4, center).start).toBe(0)
+  })
+
+  it('klemmt am rechten Rand (Fenster bleibt sichtbar)', () => {
+    const center = centerForStart(0.95, 4) // 0.95 + 0.25 > 1 -> auf 0.75 geklemmt
+    expect(viewWindow(4, center).start).toBeCloseTo(0.75)
+    expect(viewWindow(4, center).end).toBeCloseTo(1)
+  })
+
+  it('zoom=1 -> Fenster deckt alles ab, start bleibt 0', () => {
+    expect(viewWindow(1, centerForStart(0.4, 1)).start).toBe(0)
   })
 })

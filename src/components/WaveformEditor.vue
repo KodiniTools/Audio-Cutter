@@ -4,7 +4,7 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useAudioCutterStore } from '../stores/audioCutter'
 import { useWaveform } from '../composables/useWaveform'
-import { absToView, clampZoom, viewToAbs, viewWindow } from '../utils/zoom'
+import { absToView, centerForStart, clampZoom, viewToAbs, viewWindow } from '../utils/zoom'
 import { formatMs } from '../utils/audioMath'
 
 const { t } = useI18n({ useScope: 'global' })
@@ -28,6 +28,13 @@ const win = computed(() => viewWindow(zoom.value, viewCenterFrac.value))
 const zoomLabel = computed(() => `${Math.round(zoom.value * 10) / 10}×`)
 const canZoomOut = computed(() => zoom.value > 1.001)
 const canZoomIn = computed(() => zoom.value < 499)
+/** Horizontale Scrollbar nur zeigen, wenn reingezoomt (sonst passt alles ins Fenster). */
+const isZoomed = computed(() => zoom.value > 1.001)
+/** Thumb-Geometrie (Position + Breite als Prozent der Gesamtlaenge). */
+const scrollThumb = computed(() => ({
+  left: `${win.value.start * 100}%`,
+  width: `${Math.max(4, win.value.width * 100)}%`,
+}))
 
 type DragTarget = 'start' | 'end' | 'new' | null
 const dragging = ref<DragTarget>(null)
@@ -122,14 +129,24 @@ function zoomReset(): void {
   viewCenterFrac.value = 0.5
 }
 
+/** Sichtfenster horizontal verschieben (Pan) – der Marker behaelt seine Position. */
+function panByPx(deltaPx: number, widthPx: number): void {
+  const frac = deltaPx / widthPx
+  viewCenterFrac.value = Math.max(0, Math.min(1, viewCenterFrac.value + frac * win.value.width))
+}
+
 function onWheel(e: WheelEvent): void {
   if (!store.hasAudio) return
   const canvas = canvasRef.value!
   const rect = canvas.getBoundingClientRect()
+  // Horizontal scrollen: Shift+Rad, echtes horizontales Rad oder Trackpad-Wisch
+  // (deltaX ueberwiegt). Verschiebt nur das Sichtfenster, nie den Marker.
   if (e.shiftKey) {
-    // Shift+Rad: horizontal verschieben (Pan).
-    const frac = (e.deltaY || e.deltaX) / rect.width
-    viewCenterFrac.value = Math.max(0, Math.min(1, viewCenterFrac.value + frac * win.value.width))
+    panByPx(e.deltaY || e.deltaX, rect.width)
+    return
+  }
+  if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+    panByPx(e.deltaX, rect.width)
     return
   }
   // Rad: an der Cursorposition zoomen (Frac unter dem Cursor bleibt fix).
@@ -138,6 +155,46 @@ function onWheel(e: WheelEvent): void {
   zoom.value = clampZoom(zoom.value * (e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP))
   const newWidth = 1 / zoom.value
   viewCenterFrac.value = absUnderCursor - cursorViewFrac * newWidth + newWidth / 2
+}
+
+// --- Horizontale Scrollbar (nur sichtbar bei Zoom) ---
+const scrollTrackRef = ref<HTMLElement | null>(null)
+const scrollDragging = ref(false)
+/** Greifpunkt: Abstand (Frac) zwischen Fenster-Anfang und Zeiger beim Anfassen. */
+let scrollGrabFrac = 0
+
+/** Fenster so verschieben, dass es (geklemmt) bei startFrac beginnt – Marker bleibt fix. */
+function setViewStart(startFrac: number): void {
+  viewCenterFrac.value = centerForStart(startFrac, zoom.value)
+}
+
+function onScrollPointerDown(e: PointerEvent): void {
+  const track = scrollTrackRef.value
+  if (!track) return
+  const rect = track.getBoundingClientRect()
+  const pointerFrac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+  track.setPointerCapture(e.pointerId)
+  scrollDragging.value = true
+  // Zeiger auf dem Thumb -> Greifpunkt merken; daneben -> Thumb dorthin zentrieren.
+  if (pointerFrac >= win.value.start && pointerFrac <= win.value.end) {
+    scrollGrabFrac = pointerFrac - win.value.start
+  } else {
+    scrollGrabFrac = win.value.width / 2
+    setViewStart(pointerFrac - scrollGrabFrac)
+  }
+}
+
+function onScrollPointerMove(e: PointerEvent): void {
+  if (!scrollDragging.value) return
+  const track = scrollTrackRef.value!
+  const rect = track.getBoundingClientRect()
+  const pointerFrac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+  setViewStart(pointerFrac - scrollGrabFrac)
+}
+
+function onScrollPointerUp(e: PointerEvent): void {
+  scrollDragging.value = false
+  scrollTrackRef.value?.releasePointerCapture(e.pointerId)
 }
 
 const HANDLE_PX = 8
@@ -386,6 +443,7 @@ defineExpose({
     </div>
 
     <canvas
+      id="waveform-canvas"
       ref="canvasRef"
       class="h-40 w-full cursor-crosshair rounded-lg border border-neutral-200 bg-white touch-none select-none dark:border-transparent dark:bg-neutral-950"
       @pointerdown="onPointerDown"
@@ -394,6 +452,32 @@ defineExpose({
       @pointercancel="onPointerCancel"
       @wheel.prevent="onWheel"
     ></canvas>
+
+    <!-- Horizontale Scrollbar: nur bei Zoom sichtbar; verschiebt das Sichtfenster,
+         ohne den Marker/Cursor zu bewegen (auch bei „Marker folgen"). -->
+    <div
+      v-if="isZoomed"
+      ref="scrollTrackRef"
+      class="mt-2 h-3 w-full cursor-pointer touch-none select-none rounded-full bg-neutral-200 dark:bg-neutral-800"
+      role="scrollbar"
+      aria-orientation="horizontal"
+      aria-controls="waveform-canvas"
+      :aria-valuenow="Math.round(win.start * 100)"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      :aria-label="t('waveform.scroll')"
+      :title="t('waveform.scroll')"
+      @pointerdown="onScrollPointerDown"
+      @pointermove="onScrollPointerMove"
+      @pointerup="onScrollPointerUp"
+      @pointercancel="onScrollPointerUp"
+    >
+      <div
+        class="pointer-events-none h-full rounded-full bg-emerald-500/70 transition-colors dark:bg-emerald-400/60"
+        :class="scrollDragging ? 'bg-emerald-600 dark:bg-emerald-400' : ''"
+        :style="scrollThumb"
+      ></div>
+    </div>
 
     <!-- Live-Werte: Gesamtdauer · Auswahl · Cursor · Restdauer (live) -->
     <div class="mt-2 flex items-start justify-between gap-2 font-mono text-xs">
