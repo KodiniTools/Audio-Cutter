@@ -61,10 +61,11 @@ export default {
     touchPinch: 'Zwei Finger = Zoom & Verschieben',
   },
   waveform: {
-    hint: 'Ziehen zum Markieren · Ränder ziehen zum Feinjustieren · Klick/Tippen = Abspielpunkt · Mausrad / 2 Finger = Zoom · Shift+Mausrad = Verschieben',
+    hint: 'Ziehen zum Markieren · Ränder ziehen zum Feinjustieren · Klick/Tippen = Abspielpunkt · Mausrad / 2 Finger = Zoom · Shift+Mausrad oder Scrollleiste = Verschieben',
     zoomIn: 'Reinzoomen',
     zoomOut: 'Rauszoomen',
     zoomReset: 'Zoom zurücksetzen',
+    scroll: 'Horizontal scrollen',
     followMarker: 'Marker folgen',
     total: 'Gesamtdauer',
     selection: 'Auswahl',

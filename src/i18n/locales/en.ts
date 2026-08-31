@@ -61,10 +61,11 @@ const en: MessageSchema = {
     touchPinch: 'Two fingers = zoom & pan',
   },
   waveform: {
-    hint: 'Drag to select · drag the edges to fine-tune · Click/Tap = play point · Wheel / two fingers = zoom · Shift+Wheel = pan',
+    hint: 'Drag to select · drag the edges to fine-tune · Click/Tap = play point · Wheel / two fingers = zoom · Shift+Wheel or scrollbar = pan',
     zoomIn: 'Zoom in',
     zoomOut: 'Zoom out',
     zoomReset: 'Reset zoom',
+    scroll: 'Scroll horizontally',
     followMarker: 'Follow marker',
     total: 'Total duration',
     selection: 'Selection',
