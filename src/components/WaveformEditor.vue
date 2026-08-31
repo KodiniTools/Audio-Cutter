@@ -57,7 +57,8 @@ const colors = computed(() =>
     ? {
         waveform: '#34d399',
         regionFill: 'rgba(52, 211, 153, 0.12)',
-        regionBorder: '#34d399',
+        regionStartBorder: '#fbbf24', // gelb: Auswahlanfang
+        regionEndBorder: '#f87171', // rot: Auswahlende
         playhead: '#f5f5f5',
         background: '#0a0a0a',
         axis: '#262626',
@@ -65,7 +66,8 @@ const colors = computed(() =>
     : {
         waveform: '#059669',
         regionFill: 'rgba(5, 150, 105, 0.14)',
-        regionBorder: '#059669',
+        regionStartBorder: '#d97706', // gelb: Auswahlanfang
+        regionEndBorder: '#dc2626', // rot: Auswahlende
         playhead: '#0a0a0a',
         background: '#ffffff',
         axis: '#e5e5e5',
