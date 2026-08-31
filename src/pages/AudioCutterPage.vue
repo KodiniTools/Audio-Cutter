@@ -141,8 +141,35 @@ async function onFile(file: File): Promise<void> {
   }
 }
 
-async function onProcess(): Promise<void> {
-  if (!store.canProcess) return
+/**
+ * Kumulativer Schnitt: wendet die gewählte Aktion (behalten/entfernen + Fades)
+ * auf den aktuellen Puffer an – beliebig oft wiederholbar, je ein Undo-Schritt.
+ * Läuft rein lokal und synchron (kein Overlay nötig).
+ */
+function onCut(): void {
+  if (!store.canCut) return
+  // Laufende Wiedergabe bezieht sich auf den alten Puffer -> stoppen.
+  player?.stop()
+  player = null
+  playState.value = 'stopped'
+  previewing.value = false
+  store.setError(null)
+  if (store.applyCut()) {
+    // Marker auf den Anfang des neuen Puffers setzen.
+    cursorMs.value = 0
+    setPlayheadMs(0)
+  } else if (store.error) {
+    store.setError(toMessage(new Error(store.error), 'errors.processFailed'))
+  }
+}
+
+/**
+ * Exportiert den finalen Puffer: encodiert (Browser) bzw. transkodiert per
+ * Server (erweiterte Formate laden den bearbeiteten Puffer als WAV hoch).
+ * Erst aktiv, sobald mindestens ein Schnitt existiert.
+ */
+async function onExport(): Promise<void> {
+  if (!store.canExport || !decoded.value || !meta.value) return
   store.setError(null)
   store.setResult(null)
   store.setStatus('processing')
@@ -151,14 +178,18 @@ async function onProcess(): Promise<void> {
   abortController = new AbortController()
   try {
     if (mode.value === 'server') {
-      const file = store.sourceFile
-      if (!file) throw new Error('noSourceFile')
+      // Server transkodiert den bereits geschnittenen Puffer (als WAV) in das
+      // Zielformat – Auswahl/Fades sind schon im Puffer enthalten.
+      const stem = meta.value.name.replace(/\.[^.]+$/, '') || 'audio'
+      const wavFile = new File([engine.toWavBlob(decoded.value)], `${stem}.wav`, {
+        type: 'audio/wav',
+      })
       const res = await cutOnServer(
         {
-          file,
-          startMs: region.value.startMs,
-          endMs: region.value.endMs,
-          options: exportOptions.value,
+          file: wavFile,
+          startMs: 0,
+          endMs: store.durationMs,
+          options: { ...exportOptions.value, fadeInMs: 0, fadeOutMs: 0, cutMode: 'keep' },
         },
         {
           signal: abortController.signal,
@@ -168,19 +199,12 @@ async function onProcess(): Promise<void> {
       )
       store.setResult(res)
     } else {
-      if (!decoded.value || !meta.value) throw new Error('noDecodedData')
       // Kurzer Yield, damit die UI den Busy-State rendern kann.
       await new Promise((r) => setTimeout(r, 0))
-      const res = await engine.cut(
-        decoded.value,
-        region.value,
-        exportOptions.value,
-        meta.value.name,
-        {
-          signal: abortController.signal,
-          onProgress: (f) => store.setProgress(f),
-        },
-      )
+      const res = await engine.encode(decoded.value, exportOptions.value, meta.value.name, {
+        signal: abortController.signal,
+        onProgress: (f) => store.setProgress(f),
+      })
       store.setResult(res)
     }
   } catch (e) {
@@ -345,7 +369,7 @@ function onKeydown(e: KeyboardEvent): void {
       store.redo()
     } else if (e.key === 'Enter') {
       e.preventDefault()
-      if (store.canProcess) onProcess()
+      if (store.canCut) onCut()
     }
     return
   }
@@ -474,7 +498,8 @@ onBeforeUnmount(() => {
       <!-- Linke Sidebar: kompakte Export-Steuerung via Dropdowns -->
       <aside class="order-2 w-full shrink-0 lg:order-1 lg:w-72 lg:sticky lg:top-8">
         <ExportPanel
-          @process="onProcess"
+          @cut="onCut"
+          @export="onExport"
           @cancel="onCancel"
           @download="onDownload"
           @delete="onDelete"

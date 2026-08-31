@@ -4,20 +4,13 @@
 // MP3-Encoding läuft im Web Worker (Fortschritt + Abbruch); Sync-Fallback ohne Worker.
 
 import { Mp3Encoder } from '@breezystack/lamejs'
-import type {
-  AudioMeta,
-  CutRegion,
-  CutResult,
-  DecodedAudio,
-  ExportOptions,
-} from '../types/audio'
-import { msToSamples } from '../utils/audioMath'
-import { applyFade, removeRegion, sliceChannels } from '../utils/sliceBuffer'
+import type { AudioMeta, CutRegion, CutResult, DecodedAudio, ExportOptions } from '../types/audio'
+import { samplesToMs } from '../utils/audioMath'
 import { encodeWav } from '../utils/wavEncoder'
 import { channelCountFor, encodeMp3Blocks } from '../utils/mp3Encoder'
 import { encodeMp3InWorker, workerSupported } from './useMp3Worker'
 
-/** Optionale Steuerung für {@link useAudioEngine.cut}. */
+/** Optionale Steuerung für {@link useAudioEngine.encode}. */
 export interface CutControls {
   signal?: AbortSignal
   onProgress?: (fraction: number) => void
@@ -68,33 +61,25 @@ export function useAudioEngine() {
   }
 
   /**
-   * Schneidet + (optional) Fade + kodiert nach WAV oder MP3.
+   * Kodiert den (bereits geschnittenen) Puffer nach WAV oder MP3.
+   * Die Schnitte + Fades wurden im kumulativen Editor bereits auf den Puffer
+   * angewendet – hier wird nur noch der finale Zustand encodiert.
    * MP3 läuft im Worker (nicht-blockierend); WAV bleibt synchron.
-   * @throws DOMException('AbortError') bei Abbruch, Error('emptyRegion') bei leerer Auswahl.
+   * @throws DOMException('AbortError') bei Abbruch, Error('emptyRegion') bei leerem Puffer.
    */
-  async function cut(
+  async function encode(
     decoded: DecodedAudio,
-    region: CutRegion,
     options: ExportOptions,
     baseName: string,
     controls: CutControls = {},
   ): Promise<CutResult> {
     const { signal, onProgress } = controls
     const { sampleRate, channels } = decoded
-    const startSample = msToSamples(region.startMs, sampleRate)
-    const endSample = msToSamples(region.endMs, sampleRate)
-
-    // 'remove' = Auswahl entfernen (Kopf + Rest verbinden), sonst Auswahl behalten.
-    const sliced =
-      options.cutMode === 'remove'
-        ? removeRegion(channels, startSample, endSample)
-        : sliceChannels(channels, startSample, endSample)
-    if (sliced.length === 0 || sliced[0].length === 0) {
+    if (channels.length === 0 || channels[0].length === 0) {
       throw new Error('emptyRegion')
     }
-    applyFade(sliced, sampleRate, options.fadeInMs, options.fadeOutMs)
 
-    const durationMs = (sliced[0].length / sampleRate) * 1000
+    const durationMs = samplesToMs(channels[0].length, sampleRate)
     const stem = baseName.replace(/\.[^.]+$/, '') || 'audio'
 
     // Der Browser-Modus kodiert nur WAV + MP3; alles Übrige liefert der Server.
@@ -103,7 +88,7 @@ export function useAudioEngine() {
     }
 
     if (options.format === 'wav') {
-      const wav = encodeWav(sliced, sampleRate)
+      const wav = encodeWav(channels, sampleRate)
       onProgress?.(1)
       return {
         blob: new Blob([wav], { type: 'audio/wav' }),
@@ -116,11 +101,11 @@ export function useAudioEngine() {
     // MP3: bevorzugt im Worker (Main-Thread bleibt frei), sonst synchroner Fallback.
     let mp3: Uint8Array<ArrayBuffer>
     if (workerSupported()) {
-      mp3 = await encodeMp3InWorker(sliced, sampleRate, options.mp3Bitrate, { signal, onProgress })
+      mp3 = await encodeMp3InWorker(channels, sampleRate, options.mp3Bitrate, { signal, onProgress })
     } else {
       if (signal?.aborted) throw new DOMException('Abgebrochen.', 'AbortError')
-      const encoder = new Mp3Encoder(channelCountFor(sliced), sampleRate, options.mp3Bitrate)
-      mp3 = encodeMp3Blocks(sliced, encoder, onProgress)
+      const encoder = new Mp3Encoder(channelCountFor(channels), sampleRate, options.mp3Bitrate)
+      mp3 = encodeMp3Blocks(channels, encoder, onProgress)
     }
 
     return {
@@ -129,6 +114,12 @@ export function useAudioEngine() {
       format: 'mp3',
       durationMs,
     }
+  }
+
+  /** Kodiert den aktuellen Puffer verlustfrei als WAV-Blob (für den Server-Upload). */
+  function toWavBlob(decoded: DecodedAudio): Blob {
+    const wav = encodeWav(decoded.channels, decoded.sampleRate)
+    return new Blob([wav], { type: 'audio/wav' })
   }
 
   /**
@@ -242,7 +233,7 @@ export function useAudioEngine() {
     }
   }
 
-  return { decode, cut, createRegionPlayer }
+  return { decode, encode, toWavBlob, createRegionPlayer }
 }
 
 /** Steuer-Handle eines laufenden Vorschau-Players. */

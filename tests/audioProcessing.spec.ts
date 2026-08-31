@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { applyFade, floatToInt16, removeRegion, sliceChannels } from '../src/utils/sliceBuffer'
+import {
+  applyFade,
+  cutChannels,
+  floatToInt16,
+  removeRegion,
+  sliceChannels,
+} from '../src/utils/sliceBuffer'
 import { encodeWav } from '../src/utils/wavEncoder'
 import { computePeaks } from '../src/utils/waveform'
 
@@ -79,6 +85,29 @@ describe('applyFade', () => {
     const ch = [new Float32Array(10).fill(0.5)]
     applyFade(ch, 1000, 0, 0)
     expect(ch[0].every((v) => v === 0.5)).toBe(true)
+  })
+})
+
+describe('cutChannels', () => {
+  it('behält den Bereich und lässt das Original unverändert', () => {
+    const ch = [ramp(100)]
+    const copy = Float32Array.from(ch[0])
+    const out = cutChannels(ch, 1000, 10, 40, 'keep', 0, 0)
+    expect(out[0].length).toBe(30)
+    expect(out[0][0]).toBeCloseTo(0.1)
+    // Eingabe unangetastet (Grundlage des kumulativen Schneidens).
+    expect(Array.from(ch[0])).toEqual(Array.from(copy))
+  })
+  it('entfernt den Bereich (remove) und verbindet den Rest', () => {
+    const out = cutChannels([ramp(100)], 1000, 10, 40, 'remove', 0, 0)
+    expect(out[0].length).toBe(70)
+  })
+  it('legt Fades auf den geschnittenen Puffer', () => {
+    const ch = [new Float32Array(100).fill(1)]
+    const out = cutChannels(ch, 1000, 0, 100, 'keep', 20, 20) // 20 Samples @1000Hz
+    expect(out[0][0]).toBeCloseTo(0)
+    expect(out[0][99]).toBeCloseTo(0)
+    expect(out[0][50]).toBeCloseTo(1)
   })
 })
 

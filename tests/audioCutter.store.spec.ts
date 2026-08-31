@@ -22,7 +22,8 @@ describe('audioCutter store', () => {
   it('startet leer und ungültig', () => {
     const s = useAudioCutterStore()
     expect(s.hasAudio).toBe(false)
-    expect(s.canProcess).toBe(false)
+    expect(s.canCut).toBe(false)
+    expect(s.canExport).toBe(false)
     expect(s.regionValidation.valid).toBe(false)
   })
 
@@ -32,7 +33,10 @@ describe('audioCutter store', () => {
     expect(s.region.startMs).toBe(0)
     expect(s.region.endMs).toBe(10_000)
     expect(s.hasAudio).toBe(true)
-    expect(s.canProcess).toBe(true)
+    expect(s.canCut).toBe(true)
+    // Ohne Schnitt ist Export noch nicht möglich.
+    expect(s.hasEdits).toBe(false)
+    expect(s.canExport).toBe(false)
   })
 
   it('setStart klemmt gegen 0 und Ende', () => {
@@ -98,6 +102,86 @@ describe('audioCutter store', () => {
     s.reset()
     expect(s.hasAudio).toBe(false)
     expect(s.region).toEqual({ startMs: 0, endMs: 0 })
+    expect(s.status).toBe('idle')
+  })
+})
+
+describe('audioCutter store · kumulatives Schneiden', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('wendet einen Schnitt auf den Puffer an und verkürzt die Dauer', () => {
+    const s = useAudioCutterStore()
+    s.setDecoded(meta, decoded, null)
+    s.setRegion(2000, 5000) // 3 s behalten
+    const ok = s.applyCut()
+    expect(ok).toBe(true)
+    expect(s.durationMs).toBe(3000)
+    expect(s.decoded?.channels[0].length).toBe(Math.round((3000 / 1000) * 44100))
+    // Auswahl deckt nach dem Schnitt den ganzen neuen Puffer ab.
+    expect(s.region).toEqual({ startMs: 0, endMs: 3000 })
+    // Export ist jetzt möglich.
+    expect(s.hasEdits).toBe(true)
+    expect(s.canExport).toBe(true)
+  })
+
+  it('ist je Schnitt ein Undo-Schritt und stellt den Puffer wieder her', () => {
+    const s = useAudioCutterStore()
+    s.setDecoded(meta, decoded, null)
+    s.setRegion(0, 6000)
+    s.applyCut()
+    expect(s.durationMs).toBe(6000)
+    s.setRegion(0, 2000)
+    s.applyCut()
+    expect(s.durationMs).toBe(2000)
+
+    // Ein Undo nimmt den letzten Schnitt zurück (Puffer = 6 s).
+    s.undo()
+    expect(s.durationMs).toBe(6000)
+    expect(s.hasEdits).toBe(true)
+
+    // Weiter zurück (auch die Auswahl-Schritte) bis zum Ursprungspuffer.
+    while (s.canUndo) s.undo()
+    expect(s.durationMs).toBe(10_000)
+    expect(s.hasEdits).toBe(false)
+    expect(s.canExport).toBe(false)
+    // Vollständiges Redo stellt beide Schnitte wieder her.
+    while (s.canRedo) s.redo()
+    expect(s.durationMs).toBe(2000)
+    expect(s.hasEdits).toBe(true)
+  })
+
+  it('entfernt die Auswahl aus dem Puffer (remove)', () => {
+    const s = useAudioCutterStore()
+    s.setDecoded(meta, decoded, null)
+    s.patchExportOptions({ cutMode: 'remove' })
+    s.setRegion(2000, 5000) // 3 s entfernen -> 7 s bleiben
+    s.applyCut()
+    expect(s.durationMs).toBe(7000)
+  })
+
+  it('verhindert das Entfernen der gesamten Datei', () => {
+    const s = useAudioCutterStore()
+    s.setDecoded(meta, decoded, null)
+    s.patchExportOptions({ cutMode: 'remove' })
+    s.setRegion(0, 10_000) // alles entfernen
+    expect(s.canCut).toBe(false)
+  })
+
+  it('invalidiert ein Export-Ergebnis nach einem weiteren Schnitt', () => {
+    const s = useAudioCutterStore()
+    s.setDecoded(meta, decoded, null)
+    s.setRegion(0, 5000)
+    s.applyCut()
+    s.setResult({
+      blob: new Blob(['x']),
+      filename: 'song_cut.wav',
+      format: 'wav',
+      durationMs: 5000,
+    })
+    expect(s.result).not.toBeNull()
+    s.setRegion(0, 2000)
+    s.applyCut()
+    expect(s.result).toBeNull()
     expect(s.status).toBe('idle')
   })
 })
