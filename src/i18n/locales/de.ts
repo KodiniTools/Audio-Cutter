@@ -25,6 +25,7 @@ export default {
     browse: 'auswählen',
     paste: 'oder aus der Zwischenablage einfügen (Strg+V)',
     formats: 'WAV, MP3, OGG, FLAC, M4A – die Verarbeitung bleibt lokal im Browser.',
+    replaceHint: 'Datei hier ablegen zum Ersetzen',
   },
   history: {
     undo: 'Rückgängig',
