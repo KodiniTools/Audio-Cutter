@@ -81,7 +81,7 @@ const canReset = computed(
       <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-600 dark:text-neutral-400">{{ t('time.start') }}</label>
       <input
         v-model="startText"
-        class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 font-mono text-lg text-emerald-700 outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-emerald-300"
+        class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 font-mono text-lg text-amber-600 outline-none focus:border-amber-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-amber-400"
         inputmode="decimal"
         :placeholder="t('time.placeholder')"
       />
@@ -93,7 +93,7 @@ const canReset = computed(
           :max="maxMs"
           step="1"
           :aria-label="t('time.start') + ' (ms)'"
-          class="w-32 rounded-md border border-neutral-300 bg-white px-2 py-1 font-mono text-sm text-emerald-700 outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-emerald-300"
+          class="w-32 rounded-md border border-neutral-300 bg-white px-2 py-1 font-mono text-sm text-amber-600 outline-none focus:border-amber-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-amber-400"
         />
         <span class="text-xs text-neutral-500">ms</span>
       </div>
@@ -113,7 +113,7 @@ const canReset = computed(
       <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-600 dark:text-neutral-400">{{ t('time.end') }}</label>
       <input
         v-model="endText"
-        class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 font-mono text-lg text-emerald-700 outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-emerald-300"
+        class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 font-mono text-lg text-red-600 outline-none focus:border-red-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-red-400"
         inputmode="decimal"
         :placeholder="t('time.placeholder')"
       />
@@ -125,7 +125,7 @@ const canReset = computed(
           :max="maxMs"
           step="1"
           :aria-label="t('time.end') + ' (ms)'"
-          class="w-32 rounded-md border border-neutral-300 bg-white px-2 py-1 font-mono text-sm text-emerald-700 outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-emerald-300"
+          class="w-32 rounded-md border border-neutral-300 bg-white px-2 py-1 font-mono text-sm text-red-600 outline-none focus:border-red-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-red-400"
         />
         <span class="text-xs text-neutral-500">ms</span>
       </div>
