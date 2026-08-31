@@ -25,6 +25,7 @@ const en: MessageSchema = {
     browse: 'browse',
     paste: 'or paste from clipboard (Ctrl+V)',
     formats: 'WAV, MP3, OGG, FLAC, M4A – processing stays local in your browser.',
+    replaceHint: 'Drop a file here to replace',
   },
   history: {
     undo: 'Undo',

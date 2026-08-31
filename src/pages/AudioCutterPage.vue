@@ -129,7 +129,25 @@ function toMessage(e: unknown, fallbackKey: string): string {
   return t(fallbackKey)
 }
 
+/**
+ * Aktuelle Datei verwerfen und zur Dropzone zurückkehren, damit eine andere
+ * Datei geladen werden kann (Wiedergabe wird gestoppt, Zustand geleert).
+ */
+function changeFile(): void {
+  player?.stop()
+  player = null
+  playState.value = 'stopped'
+  previewing.value = false
+  cursorMs.value = null
+  store.reset()
+}
+
 async function onFile(file: File): Promise<void> {
+  // Laufende Wiedergabe des alten Puffers stoppen, bevor er verworfen wird.
+  player?.stop()
+  player = null
+  playState.value = 'stopped'
+  previewing.value = false
   store.reset()
   cursorMs.value = null
   store.setStatus('decoding')
@@ -471,6 +489,38 @@ function onPaste(e: ClipboardEvent): void {
   void onFile(file)
 }
 
+// --- Datei per Drag & Drop ersetzen (bei geöffnetem Editor) ---
+/** Zeigt das „Ablegen zum Ersetzen"-Overlay, solange eine Datei über dem Editor schwebt. */
+const draggingFile = ref(false)
+
+/** true, wenn der Drag tatsächlich Dateien mitführt (nicht nur Text/Elemente). */
+function dragHasFiles(e: DragEvent): boolean {
+  return Array.from(e.dataTransfer?.types ?? []).includes('Files')
+}
+
+function onEditorDragOver(e: DragEvent): void {
+  if (!dragHasFiles(e)) return
+  e.preventDefault()
+  draggingFile.value = true
+}
+
+function onEditorDragLeave(e: DragEvent): void {
+  // Nur ausblenden, wenn der Zeiger den Editor wirklich verlässt (nicht bei
+  // Wechsel auf ein Kind-Element).
+  const to = e.relatedTarget as Node | null
+  if (to && (e.currentTarget as HTMLElement).contains(to)) return
+  draggingFile.value = false
+}
+
+/** Fallengelassene Audiodatei laden (ersetzt die aktuelle Datei). */
+function onEditorDrop(e: DragEvent): void {
+  if (!dragHasFiles(e)) return
+  e.preventDefault()
+  draggingFile.value = false
+  const file = pickAudioFile(e.dataTransfer?.files)
+  if (file) void onFile(file)
+}
+
 onMounted(() => {
   window.addEventListener('keydown', onKeydown)
   window.addEventListener('paste', onPaste)
@@ -494,7 +544,26 @@ onBeforeUnmount(() => {
 
     <FileDropzone v-if="!hasAudio" @file="onFile" />
 
-    <div v-else class="flex flex-col gap-6 lg:flex-row lg:items-start">
+    <div
+      v-else
+      class="relative flex flex-col gap-6 lg:flex-row lg:items-start"
+      @dragover="onEditorDragOver"
+      @dragleave="onEditorDragLeave"
+      @drop="onEditorDrop"
+    >
+      <!-- Overlay: neue Datei über dem Editor ablegen ersetzt die aktuelle. -->
+      <div
+        v-if="draggingFile"
+        class="pointer-events-none absolute inset-0 z-40 flex items-center justify-center rounded-2xl border-2 border-dashed border-emerald-400 bg-emerald-400/10 backdrop-blur-sm dark:bg-emerald-400/5"
+      >
+        <div class="flex flex-col items-center gap-2 text-emerald-700 dark:text-emerald-300">
+          <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0L8 8m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+          </svg>
+          <span class="text-sm font-medium">{{ t('dropzone.replaceHint') }}</span>
+        </div>
+      </div>
+
       <!-- Linke Sidebar: kompakte Export-Steuerung via Dropdowns -->
       <aside class="order-2 w-full shrink-0 lg:order-1 lg:w-72 lg:sticky lg:top-8">
         <ExportPanel
@@ -526,9 +595,13 @@ onBeforeUnmount(() => {
               ?
             </button>
             <button
-              class="text-xs text-neutral-600 underline hover:text-emerald-600 dark:text-neutral-400 dark:hover:text-emerald-400"
-              @click="store.reset()"
+              class="flex h-6 items-center gap-1 rounded-md border border-neutral-300 px-2 text-xs font-medium text-neutral-600 transition-colors hover:border-red-500 hover:text-red-500 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-red-500 dark:hover:text-red-400"
+              :title="t('meta.changeFile')"
+              @click="changeFile"
             >
+              <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7" />
+              </svg>
               {{ t('meta.changeFile') }}
             </button>
           </div>
