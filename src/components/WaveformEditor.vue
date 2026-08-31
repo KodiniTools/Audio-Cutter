@@ -458,7 +458,7 @@ defineExpose({
     <div
       v-if="isZoomed"
       ref="scrollTrackRef"
-      class="mt-2 h-3 w-full cursor-pointer touch-none select-none rounded-full bg-neutral-200 dark:bg-neutral-800"
+      class="relative mt-2 h-3 w-full cursor-pointer touch-none select-none rounded-full bg-neutral-200 dark:bg-neutral-800"
       role="scrollbar"
       aria-orientation="horizontal"
       aria-controls="waveform-canvas"
@@ -473,7 +473,7 @@ defineExpose({
       @pointercancel="onScrollPointerUp"
     >
       <div
-        class="pointer-events-none h-full rounded-full bg-emerald-500/70 transition-colors dark:bg-emerald-400/60"
+        class="pointer-events-none absolute top-0 h-full rounded-full bg-emerald-500/70 transition-colors dark:bg-emerald-400/60"
         :class="scrollDragging ? 'bg-emerald-600 dark:bg-emerald-400' : ''"
         :style="scrollThumb"
       ></div>
