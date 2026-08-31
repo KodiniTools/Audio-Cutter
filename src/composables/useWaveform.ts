@@ -16,7 +16,10 @@ export interface WaveformDrawOptions {
   colors: {
     waveform: string
     regionFill: string
-    regionBorder: string
+    /** Rand des Auswahlanfangs (Start-Cursor). */
+    regionStartBorder: string
+    /** Rand des Auswahlendes (End-Cursor). */
+    regionEndBorder: string
     playhead: string
     background: string
     axis: string
@@ -91,21 +94,25 @@ export function useWaveform() {
       ctx.fillStyle = opts.colors.regionFill
       ctx.fillRect(xStart, 0, Math.max(1, xEnd - xStart), h)
     }
-    ctx.strokeStyle = opts.colors.regionBorder
+    // Randlinien getrennt einfaerben: Anfang = gelb, Ende = rot.
     ctx.lineWidth = 2
-    ctx.beginPath()
-    // Randlinien nur zeichnen, wenn der jeweilige Rand im Fenster liegt.
+    // Startrand nur zeichnen, wenn er im Fenster liegt.
     if (opts.regionStart >= viewStart && opts.regionStart <= viewEnd) {
       const xs = toX(opts.regionStart)
+      ctx.strokeStyle = opts.colors.regionStartBorder
+      ctx.beginPath()
       ctx.moveTo(xs + 0.5, 0)
       ctx.lineTo(xs + 0.5, h)
+      ctx.stroke()
     }
     if (opts.regionEnd >= viewStart && opts.regionEnd <= viewEnd) {
       const xe = toX(opts.regionEnd)
+      ctx.strokeStyle = opts.colors.regionEndBorder
+      ctx.beginPath()
       ctx.moveTo(xe - 0.5, 0)
       ctx.lineTo(xe - 0.5, h)
+      ctx.stroke()
     }
-    ctx.stroke()
 
     // Playhead (nur wenn im Fenster sichtbar).
     if (opts.playhead !== null && opts.playhead >= viewStart && opts.playhead <= viewEnd) {
