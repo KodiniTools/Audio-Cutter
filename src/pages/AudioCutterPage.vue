@@ -292,10 +292,18 @@ function fallbackDownload(blob: Blob, filename: string): void {
   const a = document.createElement('a')
   a.href = url
   a.download = filename
+  a.rel = 'noopener'
+  a.style.display = 'none'
   document.body.appendChild(a)
   a.click()
-  a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  // Anker UND Blob-URL erst großzügig verzögert freigeben. Wichtig bei einem
+  // „Speichern unter"-Dialog: der Browser liest die URL erst, wenn der Nutzer
+  // den Ort bestätigt hat. Ein zu frühes revoke() (oder synchrones Entfernen
+  // des Ankers) führt sonst zu net::ERR_FILE_NOT_FOUND. 60 s decken das ab.
+  setTimeout(() => {
+    a.remove()
+    URL.revokeObjectURL(url)
+  }, 60_000)
 }
 
 function onPlay(): void {
