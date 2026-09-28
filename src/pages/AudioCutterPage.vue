@@ -534,38 +534,34 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="mx-auto max-w-6xl px-4 py-8 text-neutral-900 dark:text-neutral-100">
-    <header class="mb-6">
-      <h1 class="font-mono text-2xl font-semibold tracking-tight">
-        {{ t('app.title') }} <span class="text-emerald-600 dark:text-emerald-400">{{ t('app.badge') }}</span>
-      </h1>
-      <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{{ t('app.subtitle') }}</p>
-    </header>
-
-    <FileDropzone v-if="!hasAudio" @file="onFile" />
-
-    <div
-      v-else
-      class="relative flex flex-col gap-6 lg:flex-row lg:items-start"
-      @dragover="onEditorDragOver"
-      @dragleave="onEditorDragLeave"
-      @drop="onEditorDrop"
-    >
-      <!-- Overlay: neue Datei über dem Editor ablegen ersetzt die aktuelle. -->
-      <div
-        v-if="draggingFile"
-        class="pointer-events-none absolute inset-0 z-40 flex items-center justify-center rounded-2xl border-2 border-dashed border-emerald-400 bg-emerald-400/10 backdrop-blur-sm dark:bg-emerald-400/5"
-      >
-        <div class="flex flex-col items-center gap-2 text-emerald-700 dark:text-emerald-300">
-          <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0L8 8m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
-          </svg>
-          <span class="text-sm font-medium">{{ t('dropzone.replaceHint') }}</span>
+  <div class="app-page">
+    <div class="app-container">
+      <!-- Linke Sidebar (Color-Extractor-Shell): Datei, Schnitt, Export -->
+      <aside class="sidebar">
+        <div class="panel-header">
+          <h1 class="panel-title">
+            {{ t('app.title') }} <span class="panel-badge">{{ t('app.badge') }}</span>
+          </h1>
+          <button
+            class="btn-history h-[30px] w-[30px] !p-0 !text-[13px]"
+            :title="`${t('shortcuts.open')} (?)`"
+            :aria-label="t('shortcuts.open')"
+            @click="showHelp = true"
+          >
+            ?
+          </button>
         </div>
-      </div>
 
-      <!-- Linke Sidebar: kompakte Export-Steuerung via Dropdowns -->
-      <aside class="order-2 w-full shrink-0 lg:order-1 lg:w-72 lg:sticky lg:top-8">
+        <section class="panel-section panel-section--first">
+          <div class="panel-section-head">
+            <h2 class="panel-section-title">{{ t('sections.file') }}</h2>
+          </div>
+          <div class="panel-section-body">
+            <p class="sidebar-hint">{{ t('app.subtitle') }}</p>
+            <FileDropzone compact @file="onFile" />
+          </div>
+        </section>
+
         <ExportPanel
           @cut="onCut"
           @export="onExport"
@@ -573,159 +569,162 @@ onBeforeUnmount(() => {
           @download="onDownload"
           @delete="onDelete"
         />
+
+        <div class="sidebar-footer">
+          <p class="border-t border-line-light pt-[18px] text-xs text-ink-muted">
+            {{ t('app.footer') }}
+          </p>
+        </div>
       </aside>
 
-      <!-- Hauptbereich: Datei-Info, Waveform, Player, Zeitfelder -->
-      <main class="order-1 flex min-w-0 flex-1 flex-col gap-5 lg:order-2">
-        <div
-          class="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-neutral-100 px-4 py-2 text-sm dark:bg-neutral-900/40"
-        >
-          <span class="truncate font-medium text-neutral-800 dark:text-neutral-200">{{ meta?.name }}</span>
-          <span class="font-mono text-xs text-neutral-500">
-            {{ meta?.sampleRate }} Hz · {{ meta?.numberOfChannels }} {{ t('meta.channels') }} ·
-            {{ formatMs(meta?.durationMs ?? 0) }}
-          </span>
-          <div class="flex items-center gap-3">
-            <button
-              class="flex h-6 w-6 items-center justify-center rounded-md border border-neutral-300 text-xs font-semibold text-neutral-600 transition-colors hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300"
-              :title="`${t('shortcuts.open')} (?)`"
-              :aria-label="t('shortcuts.open')"
-              @click="showHelp = true"
-            >
-              ?
-            </button>
-            <button
-              class="flex h-6 items-center gap-1 rounded-md border border-neutral-300 px-2 text-xs font-medium text-neutral-600 transition-colors hover:border-red-500 hover:text-red-500 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-red-500 dark:hover:text-red-400"
-              :title="t('meta.changeFile')"
-              @click="changeFile"
-            >
-              <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7" />
-              </svg>
-              {{ t('meta.changeFile') }}
-            </button>
-          </div>
-        </div>
+      <!-- Arbeitsbereich: Datei-Info, Waveform, Player, Zeitfelder -->
+      <!-- Mit geladener Datei oben ausrichten (Editor ist höher als der Viewport-
+           Mittelpunkt sinnvoll zulässt); leer zentriert wie im Extractor. -->
+      <main class="workspace-main" :class="{ '!items-start': hasAudio }">
+        <div class="workspace-main-inner">
+          <FileDropzone v-if="!hasAudio" @file="onFile" />
 
-        <WaveformEditor ref="waveformRef" @seek="onSeek" />
-
-        <div class="flex flex-col items-center gap-3">
-          <div class="flex items-center gap-3">
-            <!-- Zum Track-Anfang springen (Cursor auf 0:00) -->
-            <button
-              class="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-300 text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-700 dark:text-neutral-200 dark:hover:text-emerald-300"
-              :title="t('player.toStart')"
-              :aria-label="t('player.toStart')"
-              @click="cursorToStart"
-            >
-              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
-                <path d="M7 5v14H5V5h2zm12 0v14l-9-7 9-7z" />
-              </svg>
-            </button>
-            <!-- Zum Track-Ende springen (Cursor auf Gesamtdauer) -->
-            <button
-              class="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-300 text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-700 dark:text-neutral-200 dark:hover:text-emerald-300"
-              :title="t('player.toEnd')"
-              :aria-label="t('player.toEnd')"
-              @click="cursorToEnd"
-            >
-              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
-                <path d="M17 5v14h2V5h-2zM5 5v14l9-7-9-7z" />
-              </svg>
-            </button>
-            <!-- Abspielen / Fortsetzen (wenn nicht gerade spielend) -->
-            <button
-              v-if="playState !== 'playing'"
-              class="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-300 text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-700 dark:text-neutral-200 dark:hover:text-emerald-300"
-              :title="playState === 'paused' ? t('player.resume') : t('player.play')"
-              :aria-label="playState === 'paused' ? t('player.resume') : t('player.play')"
-              @click="onPlay"
-            >
-              <svg viewBox="0 0 24 24" class="h-6 w-6" fill="currentColor" aria-hidden="true">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </button>
-            <!-- Pause (nur während der Wiedergabe) -->
-            <button
-              v-else
-              class="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-300 text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-700 dark:text-neutral-200 dark:hover:text-emerald-300"
-              :title="t('player.pause')"
-              :aria-label="t('player.pause')"
-              @click="onPause"
-            >
-              <svg viewBox="0 0 24 24" class="h-6 w-6" fill="currentColor" aria-hidden="true">
-                <rect x="6" y="5" width="4" height="14" rx="1" />
-                <rect x="14" y="5" width="4" height="14" rx="1" />
-              </svg>
-            </button>
-            <!-- Stopp -->
-            <button
-              class="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-300 text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-300 disabled:hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-200 dark:hover:text-emerald-300 dark:disabled:hover:border-neutral-700 dark:disabled:hover:text-neutral-200"
-              :title="t('player.stop')"
-              :aria-label="t('player.stop')"
-              :disabled="playState === 'stopped'"
-              @click="onStopPlayback"
-            >
-              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
-                <rect x="6" y="6" width="12" height="12" rx="1.5" />
-              </svg>
-            </button>
-            <!-- Vorschau der Auswahl (markierten Ausschnitt hoeren + sehen) -->
-            <button
-              class="flex h-12 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-              :class="
-                previewing
-                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                  : 'border-neutral-300 text-neutral-700 hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-700 dark:text-neutral-200 dark:hover:text-emerald-300'
-              "
-              :title="t('player.preview')"
-              :aria-label="t('player.preview')"
-              :disabled="store.selectedDurationMs <= 0"
-              @click="onPreview"
-            >
-              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
-                <path d="M5 4v16M8 5v14l10-7z" />
-              </svg>
-              {{ t('player.preview') }}
-            </button>
-          </div>
-
-          <!-- Cursor gesetzt: aktuelle Position als Anfang/Ende übernehmen -->
           <div
-            v-if="canApplyCursor"
-            class="flex flex-wrap items-center justify-center gap-2 text-sm"
+            v-else
+            class="relative flex flex-col gap-5"
+            @dragover="onEditorDragOver"
+            @dragleave="onEditorDragLeave"
+            @drop="onEditorDrop"
           >
-            <span class="text-neutral-600 dark:text-neutral-400">
-              {{ t('player.cursorAt') }}
-              <span class="font-mono text-emerald-700 dark:text-emerald-300">{{ formatMs(cursorMs ?? 0) }}</span>
-            </span>
-            <button
-              class="rounded-md border border-neutral-300 px-3 py-1 font-medium text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-700 dark:text-neutral-200 dark:hover:text-emerald-300"
-              @click="applyCursorAsStart"
+            <!-- Overlay: neue Datei über dem Editor ablegen ersetzt die aktuelle. -->
+            <div
+              v-if="draggingFile"
+              class="pointer-events-none absolute inset-0 z-40 flex items-center justify-center rounded-xl border-[3px] border-dashed border-selection [background:color-mix(in_srgb,var(--bg-hover)_92%,transparent)] backdrop-blur-sm"
             >
-              {{ t('player.setStart') }}
-            </button>
-            <button
-              class="rounded-md border border-neutral-300 px-3 py-1 font-medium text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-700 dark:text-neutral-200 dark:hover:text-emerald-300"
-              @click="applyCursorAsEnd"
-            >
-              {{ t('player.setEnd') }}
-            </button>
+              <div class="flex flex-col items-center gap-2 text-ink-soft">
+                <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0L8 8m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                </svg>
+                <span class="text-sm font-medium">{{ t('dropzone.replaceHint') }}</span>
+              </div>
+            </div>
+
+            <div class="workspace-card flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
+              <span class="truncate font-semibold text-ink">{{ meta?.name }}</span>
+              <span class="font-mono text-xs text-ink-muted">
+                {{ meta?.sampleRate }} Hz · {{ meta?.numberOfChannels }} {{ t('meta.channels') }} ·
+                {{ formatMs(meta?.durationMs ?? 0) }}
+              </span>
+              <button class="btn-history btn-danger" :title="t('meta.changeFile')" @click="changeFile">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7" />
+                </svg>
+                {{ t('meta.changeFile') }}
+              </button>
+            </div>
+
+            <WaveformEditor ref="waveformRef" @seek="onSeek" />
+
+            <div class="flex flex-col items-center gap-3">
+              <div class="flex flex-wrap items-center justify-center gap-3">
+                <!-- Zum Track-Anfang springen (Cursor auf 0:00) -->
+                <button
+                  class="transport-btn"
+                  :title="t('player.toStart')"
+                  :aria-label="t('player.toStart')"
+                  @click="cursorToStart"
+                >
+                  <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
+                    <path d="M7 5v14H5V5h2zm12 0v14l-9-7 9-7z" />
+                  </svg>
+                </button>
+                <!-- Zum Track-Ende springen (Cursor auf Gesamtdauer) -->
+                <button
+                  class="transport-btn"
+                  :title="t('player.toEnd')"
+                  :aria-label="t('player.toEnd')"
+                  @click="cursorToEnd"
+                >
+                  <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
+                    <path d="M17 5v14h2V5h-2zM5 5v14l9-7-9-7z" />
+                  </svg>
+                </button>
+                <!-- Abspielen / Fortsetzen (wenn nicht gerade spielend) -->
+                <button
+                  v-if="playState !== 'playing'"
+                  class="transport-btn transport-btn--primary"
+                  :title="playState === 'paused' ? t('player.resume') : t('player.play')"
+                  :aria-label="playState === 'paused' ? t('player.resume') : t('player.play')"
+                  @click="onPlay"
+                >
+                  <svg viewBox="0 0 24 24" class="h-6 w-6" fill="currentColor" aria-hidden="true">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </button>
+                <!-- Pause (nur während der Wiedergabe) -->
+                <button
+                  v-else
+                  class="transport-btn transport-btn--primary"
+                  :title="t('player.pause')"
+                  :aria-label="t('player.pause')"
+                  @click="onPause"
+                >
+                  <svg viewBox="0 0 24 24" class="h-6 w-6" fill="currentColor" aria-hidden="true">
+                    <rect x="6" y="5" width="4" height="14" rx="1" />
+                    <rect x="14" y="5" width="4" height="14" rx="1" />
+                  </svg>
+                </button>
+                <!-- Stopp -->
+                <button
+                  class="transport-btn"
+                  :title="t('player.stop')"
+                  :aria-label="t('player.stop')"
+                  :disabled="playState === 'stopped'"
+                  @click="onStopPlayback"
+                >
+                  <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
+                    <rect x="6" y="6" width="12" height="12" rx="1.5" />
+                  </svg>
+                </button>
+                <!-- Vorschau der Auswahl (markierten Ausschnitt hoeren + sehen) -->
+                <button
+                  class="transport-btn transport-btn--wide"
+                  :class="{ 'is-active': previewing }"
+                  :title="t('player.preview')"
+                  :aria-label="t('player.preview')"
+                  :disabled="store.selectedDurationMs <= 0"
+                  @click="onPreview"
+                >
+                  <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
+                    <path d="M5 4v16M8 5v14l10-7z" />
+                  </svg>
+                  {{ t('player.preview') }}
+                </button>
+              </div>
+
+              <!-- Cursor gesetzt: aktuelle Position als Anfang/Ende übernehmen -->
+              <div
+                v-if="canApplyCursor"
+                class="flex flex-wrap items-center justify-center gap-2 text-sm"
+              >
+                <span class="text-ink-soft">
+                  {{ t('player.cursorAt') }}
+                  <span class="font-mono font-semibold text-ink">{{ formatMs(cursorMs ?? 0) }}</span>
+                </span>
+                <button class="btn-history" @click="applyCursorAsStart">
+                  {{ t('player.setStart') }}
+                </button>
+                <button class="btn-history" @click="applyCursorAsEnd">
+                  {{ t('player.setEnd') }}
+                </button>
+              </div>
+            </div>
+
+            <TimeControls @seek="onSeekReveal" />
           </div>
         </div>
-
-        <TimeControls @seek="onSeekReveal" />
       </main>
     </div>
-
-    <footer class="mt-10 text-center text-xs text-neutral-600">
-      {{ t('app.footer') }}
-    </footer>
 
     <!-- Schneideprozess-Overlay mit Balken und Prozenten -->
     <ProgressOverlay @cancel="onCancel" />
 
-    <!-- Tastenkürzel-/Touch-Übersicht (Taste „?" oder Button in der Datei-Leiste) -->
+    <!-- Tastenkürzel-/Touch-Übersicht (Taste „?" oder Button in der Sidebar) -->
     <ShortcutsHelp :open="showHelp" @close="showHelp = false" />
   </div>
 </template>

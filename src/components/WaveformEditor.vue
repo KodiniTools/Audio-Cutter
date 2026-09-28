@@ -51,28 +51,45 @@ function readTheme(): 'light' | 'dark' {
 }
 const theme = ref<'light' | 'dark'>(readTheme())
 
-// Canvas-Farben passend zum Theme (Light = heller Hintergrund, dunkler Marker).
-const colors = computed(() =>
-  theme.value === 'dark'
-    ? {
-        waveform: '#34d399',
-        regionFill: 'rgba(52, 211, 153, 0.12)',
-        regionStartBorder: '#fbbf24', // gelb: Auswahlanfang
-        regionEndBorder: '#f87171', // rot: Auswahlende
-        playhead: '#f5f5f5',
-        background: '#0a0a0a',
-        axis: '#262626',
-      }
-    : {
-        waveform: '#059669',
-        regionFill: 'rgba(5, 150, 105, 0.14)',
-        regionStartBorder: '#d97706', // gelb: Auswahlanfang
-        regionEndBorder: '#dc2626', // rot: Auswahlende
-        playhead: '#0a0a0a',
-        background: '#ffffff',
-        axis: '#e5e5e5',
-      },
-)
+// Canvas-Farben aus den Design-Tokens (--wave-* in src/style.css, Farbschema
+// des Color Extractors). Fallbacks greifen nur, falls das Stylesheet fehlt.
+const WAVE_FALLBACK = {
+  light: {
+    waveform: '#014f99',
+    regionFill: 'rgba(201, 152, 77, 0.28)',
+    regionStartBorder: '#d97706',
+    regionEndBorder: '#dc2626',
+    playhead: '#003971',
+    background: '#f5f4d6',
+    axis: '#f8e1a9',
+  },
+  dark: {
+    waveform: '#c9984d',
+    regionFill: 'rgba(1, 79, 153, 0.35)',
+    regionStartBorder: '#fbbf24',
+    regionEndBorder: '#f87171',
+    playhead: '#f9f2d5',
+    background: '#1a1a2e',
+    axis: '#1f2b47',
+  },
+} as const
+
+// `theme` ist Abhängigkeit, damit nach einem Theme-Wechsel neu gelesen wird.
+const colors = computed(() => {
+  const fb = WAVE_FALLBACK[theme.value]
+  const css = getComputedStyle(document.documentElement)
+  const v = (name: string, fallback: string): string =>
+    css.getPropertyValue(name).trim() || fallback
+  return {
+    waveform: v('--wave-color', fb.waveform),
+    regionFill: v('--wave-region', fb.regionFill),
+    regionStartBorder: v('--wave-start', fb.regionStartBorder), // gelb: Auswahlanfang
+    regionEndBorder: v('--wave-end', fb.regionEndBorder), // rot: Auswahlende
+    playhead: v('--wave-playhead', fb.playhead),
+    background: v('--wave-bg', fb.background),
+    axis: v('--wave-axis', fb.axis),
+  }
+})
 
 // Live-Anzeigen: Gesamtdauer, Cursorposition, Restdauer (ms + mm:ss.mmm).
 const cursorLiveMs = computed(() =>
@@ -362,92 +379,92 @@ defineExpose({
 
 <template>
   <div class="w-full">
-    <!-- Zoom-Toolbar -->
-    <div class="mb-2 flex items-center justify-between gap-1">
+    <!-- Werkzeugleiste: Verlauf + Marker folgen | Zoom -->
+    <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-1">
-      <!-- Undo / Redo -->
-      <button
-        class="flex h-8 w-8 items-center justify-center rounded-md border border-neutral-300 text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-300 disabled:hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300 dark:disabled:hover:border-neutral-700 dark:disabled:hover:text-neutral-300"
-        :title="`${t('history.undo')} (Ctrl+Z)`"
-        :aria-label="t('history.undo')"
-        :disabled="!canUndo"
-        @click="store.undo()"
-      >
-        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 14 4 9l5-5" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 9h11a5 5 0 0 1 0 10h-2" />
-        </svg>
-      </button>
-      <button
-        class="flex h-8 w-8 items-center justify-center rounded-md border border-neutral-300 text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-300 disabled:hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300 dark:disabled:hover:border-neutral-700 dark:disabled:hover:text-neutral-300"
-        :title="`${t('history.redo')} (Ctrl+Y)`"
-        :aria-label="t('history.redo')"
-        :disabled="!canRedo"
-        @click="store.redo()"
-      >
-        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" d="m15 14 5-5-5-5" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M20 9H9a5 5 0 0 0 0 10h2" />
-        </svg>
-      </button>
-      <!-- Optional: Sichtfenster folgt dem Marker (Standard aus) -->
-      <button
-        class="flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors"
-        :class="followMarker
-          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-          : 'border-neutral-300 text-neutral-600 hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-emerald-300'"
-        :aria-pressed="followMarker"
-        :title="t('waveform.followMarker')"
-        @click="followMarker = !followMarker"
-      >
-        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <circle cx="12" cy="12" r="3" />
-          <path stroke-linecap="round" d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-        </svg>
-        {{ t('waveform.followMarker') }}
-      </button>
+        <!-- Undo / Redo -->
+        <button
+          class="btn-history"
+          :title="`${t('history.undo')} (Ctrl+Z)`"
+          :aria-label="t('history.undo')"
+          :disabled="!canUndo"
+          @click="store.undo()"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 14 4 9l5-5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 9h11a5 5 0 0 1 0 10h-2" />
+          </svg>
+          {{ t('history.undo') }}
+        </button>
+        <button
+          class="btn-history"
+          :title="`${t('history.redo')} (Ctrl+Y)`"
+          :aria-label="t('history.redo')"
+          :disabled="!canRedo"
+          @click="store.redo()"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m15 14 5-5-5-5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20 9H9a5 5 0 0 0 0 10h2" />
+          </svg>
+          {{ t('history.redo') }}
+        </button>
+        <!-- Optional: Sichtfenster folgt dem Marker (Standard aus) -->
+        <button
+          class="btn-history"
+          :class="{ 'is-active': followMarker }"
+          :aria-pressed="followMarker"
+          :title="t('waveform.followMarker')"
+          @click="followMarker = !followMarker"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" />
+            <path stroke-linecap="round" d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+          </svg>
+          {{ t('waveform.followMarker') }}
+        </button>
       </div>
 
       <div class="flex items-center gap-1">
-      <button
-        class="flex h-8 w-8 items-center justify-center rounded-md border border-neutral-300 text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-300 disabled:hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300 dark:disabled:hover:border-neutral-700 dark:disabled:hover:text-neutral-300"
-        :title="t('waveform.zoomOut')"
-        :aria-label="t('waveform.zoomOut')"
-        :disabled="!canZoomOut"
-        @click="zoomOut"
-      >
-        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path stroke-linecap="round" d="M5 12h14" />
-        </svg>
-      </button>
-      <span class="w-12 text-center font-mono text-xs text-neutral-600 dark:text-neutral-400">{{ zoomLabel }}</span>
-      <button
-        class="flex h-8 w-8 items-center justify-center rounded-md border border-neutral-300 text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-300 disabled:hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300 dark:disabled:hover:border-neutral-700 dark:disabled:hover:text-neutral-300"
-        :title="t('waveform.zoomIn')"
-        :aria-label="t('waveform.zoomIn')"
-        :disabled="!canZoomIn"
-        @click="zoomIn"
-      >
-        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path stroke-linecap="round" d="M12 5v14M5 12h14" />
-        </svg>
-      </button>
-      <button
-        class="ml-1 flex h-8 items-center justify-center rounded-md border border-neutral-300 px-2 text-xs font-medium text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-300 disabled:hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300 dark:disabled:hover:border-neutral-700 dark:disabled:hover:text-neutral-300"
-        :title="t('waveform.zoomReset')"
-        :aria-label="t('waveform.zoomReset')"
-        :disabled="!canZoomOut"
-        @click="zoomReset"
-      >
-        1:1
-      </button>
+        <button
+          class="btn-history"
+          :title="t('waveform.zoomOut')"
+          :aria-label="t('waveform.zoomOut')"
+          :disabled="!canZoomOut"
+          @click="zoomOut"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" d="M5 12h14" />
+          </svg>
+        </button>
+        <span class="w-12 text-center font-mono text-xs font-bold text-ink-soft">{{ zoomLabel }}</span>
+        <button
+          class="btn-history"
+          :title="t('waveform.zoomIn')"
+          :aria-label="t('waveform.zoomIn')"
+          :disabled="!canZoomIn"
+          @click="zoomIn"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+        <button
+          class="btn-history btn-reset ml-1"
+          :title="t('waveform.zoomReset')"
+          :aria-label="t('waveform.zoomReset')"
+          :disabled="!canZoomOut"
+          @click="zoomReset"
+        >
+          1:1
+        </button>
       </div>
     </div>
 
     <canvas
       id="waveform-canvas"
       ref="canvasRef"
-      class="h-40 w-full cursor-crosshair rounded-lg border border-neutral-200 bg-white touch-none select-none dark:border-transparent dark:bg-neutral-950"
+      class="h-40 w-full cursor-crosshair touch-none select-none rounded-xl border-2 border-dashed border-line bg-page"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
@@ -460,7 +477,7 @@ defineExpose({
     <div
       v-if="isZoomed"
       ref="scrollTrackRef"
-      class="relative mt-2 h-3 w-full cursor-pointer touch-none select-none rounded-full bg-neutral-200 dark:bg-neutral-800"
+      class="relative mt-2 h-3 w-full cursor-pointer touch-none select-none rounded-full border border-line-light bg-page"
       role="scrollbar"
       aria-orientation="horizontal"
       aria-controls="waveform-canvas"
@@ -475,33 +492,33 @@ defineExpose({
       @pointercancel="onScrollPointerUp"
     >
       <div
-        class="pointer-events-none absolute top-0 h-full rounded-full bg-emerald-500/70 transition-colors dark:bg-emerald-400/60"
-        :class="scrollDragging ? 'bg-emerald-600 dark:bg-emerald-400' : ''"
+        class="pointer-events-none absolute top-0 h-full rounded-full transition-colors"
+        :class="scrollDragging ? 'bg-primary' : 'bg-accent'"
         :style="scrollThumb"
       ></div>
     </div>
 
     <!-- Live-Werte: Gesamtdauer · Auswahl · Cursor · Restdauer (live) -->
-    <div class="mt-2 flex items-start justify-between gap-2 font-mono text-xs">
-      <div class="text-left text-neutral-600 dark:text-neutral-400">
-        <div class="text-[10px] uppercase tracking-wide text-neutral-500">{{ t('waveform.total') }}</div>
-        <div class="text-neutral-800 dark:text-neutral-200">{{ msLabel(durationMs) }}</div>
+    <div class="mt-2 flex items-start justify-between gap-2 font-mono text-xs font-bold">
+      <div class="text-left">
+        <div class="caps-label font-sans !text-ink-muted">{{ t('waveform.total') }}</div>
+        <div class="text-ink">{{ msLabel(durationMs) }}</div>
       </div>
       <div class="text-center">
-        <div class="text-[10px] uppercase tracking-wide text-neutral-500">{{ t('waveform.selection') }}</div>
-        <div class="text-emerald-700 dark:text-emerald-300">{{ msLabel(selectedDurationMs) }}</div>
+        <div class="caps-label font-sans !text-ink-muted">{{ t('waveform.selection') }}</div>
+        <div class="text-ink-soft">{{ msLabel(selectedDurationMs) }}</div>
       </div>
       <div class="text-center">
-        <div class="text-[10px] uppercase tracking-wide text-neutral-500">{{ t('waveform.cursor') }}</div>
-        <div class="text-emerald-700 dark:text-emerald-300">{{ cursorLiveMs !== null ? msLabel(cursorLiveMs) : '–' }}</div>
+        <div class="caps-label font-sans !text-ink-muted">{{ t('waveform.cursor') }}</div>
+        <div class="text-ink-soft">{{ cursorLiveMs !== null ? msLabel(cursorLiveMs) : '–' }}</div>
       </div>
-      <div class="text-right text-neutral-600 dark:text-neutral-400">
-        <div class="text-[10px] uppercase tracking-wide text-neutral-500">{{ t('waveform.remaining') }}</div>
-        <div class="text-neutral-800 dark:text-neutral-200">{{ remainingMs !== null ? msLabel(remainingMs) : '–' }}</div>
+      <div class="text-right">
+        <div class="caps-label font-sans !text-ink-muted">{{ t('waveform.remaining') }}</div>
+        <div class="text-ink">{{ remainingMs !== null ? msLabel(remainingMs) : '–' }}</div>
       </div>
     </div>
 
-    <p class="mt-1 text-center text-xs text-neutral-500">
+    <p class="sidebar-hint mt-1 text-center !text-xs !text-ink-muted">
       {{ t('waveform.hint') }}
     </p>
   </div>
