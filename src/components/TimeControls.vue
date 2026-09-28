@@ -77,11 +77,11 @@ const canReset = computed(
 
 <template>
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-    <div class="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900/50">
-      <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-600 dark:text-neutral-400">{{ t('time.start') }}</label>
+    <div class="workspace-card p-4">
+      <label class="caps-label mb-1.5 block">{{ t('time.start') }}</label>
       <input
         v-model="startText"
-        class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 font-mono text-lg text-amber-600 outline-none focus:border-amber-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-amber-400"
+        class="field-input font-mono !w-full !text-lg !font-bold text-cut-start"
         inputmode="decimal"
         :placeholder="t('time.placeholder')"
       />
@@ -93,15 +93,15 @@ const canReset = computed(
           :max="maxMs"
           step="1"
           :aria-label="t('time.start') + ' (ms)'"
-          class="w-32 rounded-md border border-neutral-300 bg-white px-2 py-1 font-mono text-sm text-amber-600 outline-none focus:border-amber-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-amber-400"
+          class="field-input font-mono !w-32 !font-bold text-cut-start"
         />
-        <span class="text-xs text-neutral-500">ms</span>
+        <span class="text-xs text-ink-muted">ms</span>
       </div>
       <div class="mt-2 flex flex-wrap gap-1">
         <button
           v-for="d in nudges"
           :key="'s' + d"
-          class="rounded border border-neutral-300 px-2 py-1 font-mono text-xs text-neutral-700 hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300"
+          class="btn-history font-mono !text-[11px] !normal-case"
           @click="nudgeStart(d)"
         >
           {{ fmtDelta(d) }}ms
@@ -109,11 +109,11 @@ const canReset = computed(
       </div>
     </div>
 
-    <div class="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900/50">
-      <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-600 dark:text-neutral-400">{{ t('time.end') }}</label>
+    <div class="workspace-card p-4">
+      <label class="caps-label mb-1.5 block">{{ t('time.end') }}</label>
       <input
         v-model="endText"
-        class="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 font-mono text-lg text-red-600 outline-none focus:border-red-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-red-400"
+        class="field-input font-mono !w-full !text-lg !font-bold text-cut-end"
         inputmode="decimal"
         :placeholder="t('time.placeholder')"
       />
@@ -125,15 +125,15 @@ const canReset = computed(
           :max="maxMs"
           step="1"
           :aria-label="t('time.end') + ' (ms)'"
-          class="w-32 rounded-md border border-neutral-300 bg-white px-2 py-1 font-mono text-sm text-red-600 outline-none focus:border-red-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-red-400"
+          class="field-input font-mono !w-32 !font-bold text-cut-end"
         />
-        <span class="text-xs text-neutral-500">ms</span>
+        <span class="text-xs text-ink-muted">ms</span>
       </div>
       <div class="mt-2 flex flex-wrap gap-1">
         <button
           v-for="d in nudges"
           :key="'e' + d"
-          class="rounded border border-neutral-300 px-2 py-1 font-mono text-xs text-neutral-700 hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300"
+          class="btn-history font-mono !text-[11px] !normal-case"
           @click="nudgeEnd(d)"
         >
           {{ fmtDelta(d) }}ms
@@ -141,23 +141,23 @@ const canReset = computed(
       </div>
     </div>
 
-    <div class="sm:col-span-2 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-neutral-100 px-4 py-2 text-sm dark:bg-neutral-900/30">
-      <span class="text-neutral-600 dark:text-neutral-400">
-        {{ t('time.selection') }} <span class="font-mono text-neutral-900 dark:text-neutral-100">{{ formatMs(selectedDurationMs) }}</span>
-        <span class="text-neutral-500"> / {{ formatMs(durationMs) }}</span>
+    <div class="workspace-card flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm sm:col-span-2">
+      <span class="text-ink-soft">
+        {{ t('time.selection') }} <span class="font-mono font-semibold text-ink">{{ formatMs(selectedDurationMs) }}</span>
+        <span class="text-ink-muted"> / {{ formatMs(durationMs) }}</span>
       </span>
       <div class="flex items-center gap-3">
-        <span v-if="!regionValidation.valid && regionValidation.errorCode" class="font-medium text-amber-600 dark:text-amber-400">
+        <span v-if="!regionValidation.valid && regionValidation.errorCode" class="font-medium text-cut-start">
           {{ t(`validation.${regionValidation.errorCode}`) }}
         </span>
-        <span v-else-if="regionValidation.valid" class="text-emerald-600 dark:text-emerald-400">{{ t('time.valid') }}</span>
+        <span v-else-if="regionValidation.valid" class="font-medium text-accent">{{ t('time.valid') }}</span>
         <button
-          class="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2.5 py-1 text-xs font-medium text-neutral-700 transition-colors hover:border-emerald-500 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-300 disabled:hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-300 dark:hover:text-emerald-300 dark:disabled:hover:border-neutral-700 dark:disabled:hover:text-neutral-300"
+          class="btn-history btn-reset"
           :disabled="!canReset"
           :title="t('time.reset')"
           @click="resetSelection"
         >
-          <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v6h6M20 20v-6h-6" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M20 10a8 8 0 0 0-14.9-3M4 14a8 8 0 0 0 14.9 3" />
           </svg>

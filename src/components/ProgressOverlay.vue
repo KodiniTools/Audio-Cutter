@@ -20,32 +20,32 @@ const percent = computed(() => Math.round(progress.value * 100))
     <Transition name="overlay-fade">
       <div
         v-if="visible"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 p-4 backdrop-blur-sm dark:bg-neutral-950/80"
+        class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-5"
         role="dialog"
         aria-modal="true"
         :aria-label="t('overlay.title')"
       >
         <div
-          class="w-full max-w-sm rounded-2xl border border-neutral-200 bg-white p-6 shadow-2xl dark:border-neutral-800 dark:bg-neutral-900"
+          class="modal-content w-full max-w-sm p-6"
         >
           <div class="flex items-baseline justify-between gap-4">
-            <h3 class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ t('overlay.title') }}</h3>
-            <span class="font-mono text-2xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400"
+            <h3 class="text-base font-semibold text-ink">{{ t('overlay.title') }}</h3>
+            <span class="font-mono text-2xl font-bold tabular-nums text-ink-soft"
               >{{ percent }}%</span
             >
           </div>
 
-          <div class="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800">
+          <div class="mt-4 h-2.5 w-full overflow-hidden rounded-full border border-line-light bg-field">
             <div
-              class="h-full rounded-full bg-emerald-500 transition-[width] duration-200 ease-out"
+              class="h-full rounded-full bg-accent transition-[width] duration-200 ease-out"
               :style="{ width: `${percent}%` }"
             ></div>
           </div>
 
-          <p class="mt-3 text-xs text-neutral-500">{{ t('overlay.hint') }}</p>
+          <p class="mt-3 text-xs text-ink-muted">{{ t('overlay.hint') }}</p>
 
           <button
-            class="mt-5 w-full rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:border-red-500 hover:text-red-400 dark:border-neutral-600 dark:text-neutral-200"
+            class="export-btn export-btn-danger mt-5 w-full"
             @click="emit('cancel')"
           >
             {{ t('export.cancel') }}

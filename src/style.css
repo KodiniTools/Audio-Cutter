@@ -2,11 +2,654 @@
 @tailwind components;
 @tailwind utilities;
 
-/* min-height statt height: #app darf mit seinem Inhalt wachsen, damit der
-   nachfolgende globale Footer NICHT den unteren App-Inhalt (Auswahl-Leiste,
-   Buttons) ueberdeckt. Die App-Wurzel nutzt ohnehin min-h-screen. */
-html, body { min-height: 100%; }
-/* Body-Hintergrund folgt dem Theme (zeigt sich an den Raendern hinter
-   Nav/Footer). Light = Standard, Dark via [data-theme="dark"]. */
-body { margin: 0; background: #fafafa; }
-:root[data-theme="dark"] body { background: #0a0a0a; }
+/* ─── Design-Tokens ──────────────────────────────────────────────────────────
+   1:1 aus dem Kodini Color Extractor (src/assets/main.css) übernommen, damit
+   beide Tools pixelgenau dasselbe Farbschema tragen. Werte hier NICHT lokal
+   abwandeln – Änderungen immer zuerst im Color Extractor, dann hierher
+   spiegeln. Tailwind-Farben (tailwind.config.js) verweisen auf diese Variablen. */
+
+@font-face {
+  font-family: 'Supreme';
+  src: url('/fonts/Supreme-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    /* Color Palette */
+    --color-accent: #c9984d;
+    --color-1: #c9984d;
+    --color-2: #014f99;
+    --color-3: #003971;
+    --color-4: #f8e1a9;
+    --color-5: #f9f2d5;
+
+    /* Light Theme */
+    --bg-primary: #f5f4d6;
+    --bg-secondary: #ffffff;
+    --bg-sidebar: linear-gradient(180deg, #f5f4d6 0%, #ece6b5 100%);
+    --bg-input: #ffffff;
+    --bg-hover: #ece8c0;
+
+    --text-primary: #003971;
+    --text-secondary: #014f99;
+    --text-tertiary: #7a8fa5;
+    --text-on-accent: #003971;
+
+    --border-color: #c9984d;
+    --border-light: #f8e1a9;
+    --border-hover: #014f99;
+
+    --btn-primary-bg: #014f99;
+    --btn-primary-hover: #003971;
+    --btn-primary-text: #f5f4d6;
+    --btn-secondary-bg: #f8e1a9;
+    --btn-secondary-hover: #c9984d;
+    --btn-secondary-text: #003971;
+
+    --accent-bg: #c9984d;
+    --accent-hover: #b5873f;
+    --accent-text: #003971;
+
+    --selection-color: #014f99;
+    --selection-glow: rgba(1, 79, 153, 0.2);
+
+    --shadow-soft: rgba(0, 57, 113, 0.08);
+    --shadow-medium: rgba(0, 57, 113, 0.12);
+
+    --slider-track-from: #7a8fa5;
+    --slider-track-to: #c9984d;
+    --slider-thumb: #c9984d;
+
+    /* Audio-spezifisch (nicht im Color Extractor vorhanden): Funktionsfarben
+       der Auswahlgrenzen (Start gelb, Ende rot) und Fehlertext. */
+    --cut-start: #b45309;
+    --cut-end: #dc2626;
+    --danger: #dc2626;
+
+    /* Waveform-Canvas (WaveformEditor liest diese Werte per getComputedStyle). */
+    --wave-bg: #f5f4d6;
+    --wave-axis: #f8e1a9;
+    --wave-color: #014f99;
+    --wave-region: rgba(201, 152, 77, 0.28);
+    --wave-playhead: #003971;
+    --wave-start: #d97706;
+    --wave-end: #dc2626;
+  }
+
+  [data-theme='dark'] {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-sidebar: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    --bg-input: #16213e;
+    --bg-hover: #1f2b47;
+
+    --text-primary: #f9f2d5;
+    --text-secondary: #f8e1a9;
+    --text-tertiary: #7a8fa5;
+    --text-on-accent: #003971;
+
+    --border-color: #014f99;
+    --border-light: #1f2b47;
+    --border-hover: #c9984d;
+
+    --btn-primary-bg: #c9984d;
+    --btn-primary-hover: #f8e1a9;
+    --btn-primary-text: #003971;
+    --btn-secondary-bg: #1f2b47;
+    --btn-secondary-hover: #014f99;
+    --btn-secondary-text: #f9f2d5;
+
+    --accent-bg: #c9984d;
+    --accent-hover: #f8e1a9;
+    --accent-text: #003971;
+
+    --selection-color: #c9984d;
+    --selection-glow: rgba(201, 152, 77, 0.25);
+
+    --shadow-soft: rgba(0, 0, 0, 0.3);
+    --shadow-medium: rgba(0, 0, 0, 0.4);
+
+    --slider-track-from: #7a8fa5;
+    --slider-track-to: #c9984d;
+    --slider-thumb: #f8e1a9;
+
+    --cut-start: #fbbf24;
+    --cut-end: #f87171;
+    --danger: #f87171;
+
+    --wave-bg: #1a1a2e;
+    --wave-axis: #1f2b47;
+    --wave-color: #c9984d;
+    --wave-region: rgba(1, 79, 153, 0.35);
+    --wave-playhead: #f9f2d5;
+    --wave-start: #fbbf24;
+    --wave-end: #f87171;
+  }
+
+  /* min-height statt height: #app darf mit seinem Inhalt wachsen, damit der
+     nachfolgende globale Footer NICHT den unteren App-Inhalt (Auswahl-Leiste,
+     Buttons) ueberdeckt. */
+  html,
+  body {
+    min-height: 100%;
+    font-family: 'Supreme', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition:
+      background 0.3s ease,
+      color 0.3s ease;
+  }
+
+  body {
+    margin: 0;
+  }
+
+  button,
+  select,
+  input {
+    font-family: inherit;
+  }
+}
+
+/* Komponenten-Klassen in @layer components, damit Tailwind-Utilities sie
+   bei Bedarf (z. B. text-xs, order-*) übersteuern können. */
+@layer components {
+  /* ─── Workspace-Shell (identisch zum Color Extractor) ──────────────────────── */
+
+  .app-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+    transition: background 0.3s ease;
+  }
+
+  .app-container {
+    position: relative;
+    display: flex;
+    flex: 1;
+    /* Sticky-Sidebar muss unter der (sticky) globalen Navigation bleiben. */
+    --workspace-top: 60px;
+  }
+
+  .sidebar {
+    width: 320px;
+    min-width: 320px;
+    background: var(--bg-sidebar);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-light);
+    overflow-y: auto;
+    position: sticky;
+    top: var(--workspace-top, 53px);
+    height: calc(100vh - var(--workspace-top, 53px));
+    align-self: flex-start;
+    transition:
+      background 0.3s ease,
+      border-color 0.3s ease;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 20px;
+    min-height: 30px;
+  }
+
+  .panel-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
+  }
+
+  .panel-badge {
+    color: var(--accent-bg);
+  }
+
+  .workspace-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    background: var(--bg-secondary);
+    transition: background 0.3s ease;
+  }
+
+  .workspace-main-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    max-width: 1000px;
+  }
+
+  .sidebar-hint {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
+  }
+
+  /* Sektions-Rhythmus der Panels (entspricht PanelSection.vue im Extractor). */
+  .panel-section {
+    padding-top: 18px;
+    margin-top: 18px;
+    border-top: 1px solid var(--border-light);
+    transition: border-color 0.3s ease;
+  }
+
+  .panel-section--first {
+    padding-top: 0;
+    margin-top: 0;
+    border-top: none;
+  }
+
+  .panel-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+    min-height: 24px;
+  }
+
+  .panel-section-title {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    transition: color 0.3s ease;
+  }
+
+  .panel-section-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Kleine Caps-Beschriftung (Slider-Label-Stil des Extractors). */
+  .caps-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
+  }
+
+  .field-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .field-row label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
+  }
+
+  .field-select,
+  .field-input {
+    flex: 0 0 auto;
+    width: 58%;
+    min-width: 0;
+    padding: 7px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .field-select {
+    cursor: pointer;
+  }
+
+  .field-select:hover,
+  .field-input:hover {
+    border-color: var(--border-hover);
+  }
+
+  .field-select:focus,
+  .field-input:focus {
+    outline: none;
+    border-color: var(--selection-color);
+    box-shadow: 0 0 0 3px var(--selection-glow);
+  }
+
+  .export-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 2px;
+  }
+
+  .export-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .export-btn:hover:not(:disabled) {
+    background: var(--bg-hover);
+    border-color: var(--border-hover);
+  }
+
+  .export-btn-primary {
+    background: var(--btn-primary-bg);
+    border-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+  }
+
+  .export-btn-primary:hover:not(:disabled) {
+    background: var(--btn-primary-hover);
+    border-color: var(--btn-primary-hover);
+    color: var(--btn-primary-text);
+  }
+
+  .export-btn-danger:hover:not(:disabled) {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  .export-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  /* Kompakte Werkzeug-Buttons (Stil der Undo/Redo-Leiste des Extractors). */
+  .btn-history {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 30px;
+    padding: 7px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-history svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+  }
+
+  .btn-history:hover:not(:disabled) {
+    background: var(--bg-hover);
+    border-color: var(--border-hover);
+    color: var(--border-hover);
+  }
+
+  .btn-history:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .btn-history.is-active {
+    border-color: var(--selection-color);
+    color: var(--selection-color);
+    background: var(--bg-hover);
+    box-shadow: 0 0 0 3px var(--selection-glow);
+  }
+
+  .btn-history.btn-reset:hover:not(:disabled) {
+    border-color: var(--accent-bg);
+    color: var(--accent-bg);
+  }
+
+  .btn-history.btn-danger:hover:not(:disabled) {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  /* Player-Transport: runde Buttons in denselben Tokens. */
+  .transport-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 48px;
+    min-width: 48px;
+    border: 1px solid var(--border-color);
+    border-radius: 9999px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .transport-btn:hover:not(:disabled) {
+    background: var(--bg-hover);
+    border-color: var(--border-hover);
+    color: var(--border-hover);
+  }
+
+  .transport-btn--primary {
+    background: var(--btn-primary-bg);
+    border-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+  }
+
+  .transport-btn--primary:hover:not(:disabled) {
+    background: var(--btn-primary-hover);
+    border-color: var(--btn-primary-hover);
+    color: var(--btn-primary-text);
+  }
+
+  .transport-btn--wide {
+    padding: 0 16px;
+  }
+
+  .transport-btn.is-active {
+    border-color: var(--selection-color);
+    color: var(--selection-color);
+    background: var(--bg-hover);
+    box-shadow: 0 0 0 3px var(--selection-glow);
+  }
+
+  .transport-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  /* Kartenfläche im Arbeitsbereich (wie der Bild-Container des Extractors). */
+  .workspace-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    transition:
+      background 0.3s ease,
+      border-color 0.3s ease;
+  }
+
+  /* Slider (Visualizer-/Extractor-Muster): dünne Verlaufsspur, umrandeter Thumb. */
+  .range-slider {
+    width: 100%;
+    height: 3px;
+    margin: 8px 0;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--slider-track-from) 0%, var(--slider-track-to) 100%);
+    outline: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--slider-thumb);
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+
+  .range-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+
+  .range-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    background: var(--slider-thumb);
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+  }
+
+  .range-slider:focus-visible {
+    box-shadow: 0 0 0 3px var(--selection-glow);
+  }
+
+  /* Modale Dialoge (ImagePreviewModal-Muster des Extractors). */
+  .modal-overlay {
+    background: rgba(0, 0, 0, 0.8);
+  }
+
+  .modal-content {
+    background: var(--bg-sidebar);
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    color: var(--text-primary);
+  }
+
+  .modal-header {
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    background: var(--btn-secondary-bg);
+    color: var(--btn-secondary-text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .close-btn:hover {
+    background: var(--btn-secondary-hover);
+    color: var(--btn-primary-text);
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding-top: 20px;
+  }
+
+  @media (min-width: 1600px) {
+    .sidebar {
+      width: 360px;
+      min-width: 360px;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .app-container {
+      flex-direction: column;
+    }
+
+    .sidebar {
+      width: 100%;
+      min-width: 100%;
+      position: static;
+      height: auto;
+      max-height: none;
+      overflow-y: visible;
+      border-right: none;
+      border-top: 1px solid var(--border-light);
+      padding: 16px;
+      /* Abweichung vom Extractor (bewusst): auf Mobilgeräten bleibt die
+         Waveform oben, Schnitt/Export folgen darunter (bisheriges Verhalten). */
+      order: 2;
+    }
+
+    .workspace-main {
+      padding: 20px 16px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .app-container {
+      --workspace-top: 50px;
+    }
+
+    .sidebar {
+      padding: 12px;
+    }
+
+    .export-btn {
+      padding: 14px;
+      min-height: 44px;
+    }
+
+    .btn-history {
+      min-height: 40px;
+    }
+
+    .range-slider::-webkit-slider-thumb {
+      width: 20px;
+      height: 20px;
+    }
+
+    .range-slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+    }
+  }
+}

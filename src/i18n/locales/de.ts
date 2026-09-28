@@ -11,6 +11,9 @@ export default {
       'Millisekunden-genau schneiden – lokal im Browser oder serverseitig für große Dateien.',
     footer: 'Privacy First · Browser-Modus verarbeitet Dateien ohne Upload.',
   },
+  sections: {
+    file: 'Datei',
+  },
   lang: {
     label: 'Sprache',
     de: 'DE',

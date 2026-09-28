@@ -11,6 +11,9 @@ const en: MessageSchema = {
       'Cut with millisecond precision – locally in the browser or server-side for large files.',
     footer: 'Privacy First · Browser mode processes files without uploading.',
   },
+  sections: {
+    file: 'File',
+  },
   lang: {
     label: 'Language',
     de: 'DE',
