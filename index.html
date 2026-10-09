@@ -24,8 +24,8 @@
 
     <!-- === Darstellung / PWA === -->
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f4d6" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1a1a2e" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f5f1" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a1324" />
     <link rel="manifest" href="/audio-cutter/site.webmanifest" />
     <!-- Gemeinsames KodiniTools-Favicon aus dem Domain-Root
          (/var/www/kodinitools.com/public/favicon.ico -> https://kodinitools.com/favicon.ico),
@@ -114,20 +114,18 @@
       }
     </script>
 
-    <!-- Theme fruehestmoeglich setzen (kein Flash). Gleiche Logik wie die
-         globale Nav: gespeicherte Wahl -> sonst System-Praeferenz. -->
+    <!-- Theme vor dem ersten Paint setzen (Tokens: Dark auf :root, Light über data-theme),
+         damit Light-Nutzer keinen dunklen Flash sehen. Der Settings-Store übernimmt danach. -->
     <script>
-      (function () {
-        try {
-          var t = localStorage.getItem('theme');
-          if (t !== 'light' && t !== 'dark') {
-            t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-          }
-          document.documentElement.setAttribute('data-theme', t);
-        } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'dark');
-        }
-      })();
+      try {
+        var storedTheme = localStorage.getItem('theme');
+        document.documentElement.setAttribute(
+          'data-theme',
+          storedTheme === 'dark' ? 'dark' : 'light'
+        );
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
     </script>
 
     <!-- Google Consent Mode v2 - DSGVO/GDPR Compliant -->

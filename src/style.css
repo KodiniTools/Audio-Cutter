@@ -1,172 +1,279 @@
+/* ==========================================================================
+   Audio Cutter · Globale Basis-Styles
+   --------------------------------------------------------------------------
+   Tokens: src/design-system/tokens-v2.css (--ds-*, Kopie aus dem Collage Maker,
+   gemeinsam mit dem Playlist Generator). Farben, Radien, Schatten und Dauern
+   laufen in Tailwind über diese Variablen (tailwind.config.js); Komponenten
+   nutzen keine festen Farbwerte. Hier stehen Schrift, Body, die Angleichung
+   der SSI-Partials, die Workspace-Shell und die gemeinsamen Control-Klassen.
+   ========================================================================== */
+
+@import './design-system/tokens-v2.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Design-Tokens ──────────────────────────────────────────────────────────
-   1:1 aus dem Kodini Color Extractor (src/assets/main.css) übernommen, damit
-   beide Tools pixelgenau dasselbe Farbschema tragen. Werte hier NICHT lokal
-   abwandeln – Änderungen immer zuerst im Color Extractor, dann hierher
-   spiegeln. Tailwind-Farben (tailwind.config.js) verweisen auf diese Variablen. */
-
+/* === Schrift: Supreme in den drei genutzten Gewichten (font-medium = 500,
+   font-semibold/-bold = 700), gebündelt aus src/assets/fonts. === */
 @font-face {
   font-family: 'Supreme';
-  src: url('/fonts/Supreme-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  src: url('./assets/fonts/Supreme-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Supreme';
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url('./assets/fonts/Supreme-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Supreme';
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('./assets/fonts/Supreme-Bold.woff2') format('woff2');
 }
 
-@layer base {
-  :root {
-    /* Color Palette */
-    --color-accent: #c9984d;
-    --color-1: #c9984d;
-    --color-2: #014f99;
-    --color-3: #003971;
-    --color-4: #f8e1a9;
-    --color-5: #f9f2d5;
+/* === Farbschema für native Controls (Select-Listen, Scrollbalken) === */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
 
-    /* Light Theme */
-    --bg-primary: #f5f4d6;
-    --bg-secondary: #ffffff;
-    --bg-sidebar: linear-gradient(180deg, #f5f4d6 0%, #ece6b5 100%);
-    --bg-input: #ffffff;
-    --bg-hover: #ece8c0;
+:root[data-theme='light'] {
+  color-scheme: light;
+}
 
-    --text-primary: #003971;
-    --text-secondary: #014f99;
-    --text-tertiary: #7a8fa5;
-    --text-on-accent: #003971;
+/* === Body ===
+   min-height statt height: #app darf mit seinem Inhalt wachsen, damit der
+   nachfolgende globale Footer NICHT den unteren App-Inhalt überdeckt. */
+html,
+body {
+  min-height: 100%;
+}
 
-    --border-color: #c9984d;
-    --border-light: #f8e1a9;
-    --border-hover: #014f99;
+body {
+  margin: 0;
+  font-family: var(--ds-font-sans);
+  font-size: var(--ds-text-lg);
+  line-height: var(--ds-leading);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--ds-surface-0);
+  color: var(--ds-text);
+  transition:
+    background-color var(--ds-duration-slow) var(--ds-ease),
+    color var(--ds-duration-slow) var(--ds-ease);
+}
 
-    --btn-primary-bg: #014f99;
-    --btn-primary-hover: #003971;
-    --btn-primary-text: #f5f4d6;
-    --btn-secondary-bg: #f8e1a9;
-    --btn-secondary-hover: #c9984d;
-    --btn-secondary-text: #003971;
+button,
+select,
+input {
+  font-family: inherit;
+}
 
-    --accent-bg: #c9984d;
-    --accent-hover: #b5873f;
-    --accent-text: #003971;
+/* === SSI-Partials (nav/footer außerhalb von #app) ===
+   Eigene Hintergründe entfernen, damit die Seitenfläche durchscheint — außer
+   beim Cookie-Banner. Direkte Wrapper (nav, footer): normale Spezifität. */
+body > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']) {
+  background-color: transparent !important;
+}
+/* Alle inneren Nachfahren: :where() hat Spezifität 0, damit die Restore-Regeln gewinnen */
+:where(
+    body > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie'])
+  )
+  :where(*:not(.cookie-banner):not(.cookie-consent):not([class*='cookie'])) {
+  background-color: transparent !important;
+}
 
-    --selection-color: #014f99;
-    --selection-glow: rgba(1, 79, 153, 0.2);
+/* Dropdowns/Submenüs der SSI-Navigation bekommen wieder eine feste Fläche */
+body > :not(#app):not(script) [class*='drop'],
+body > :not(#app):not(script) [class*='sub-menu'],
+body > :not(#app):not(script) [class*='submenu'],
+body > :not(#app):not(script) [class*='popup'],
+body > :not(#app):not(script) [class*='popover'],
+body > :not(#app):not(script) [class*='megamenu'] {
+  background-color: var(--ds-surface-1) !important;
+}
 
-    --shadow-soft: rgba(0, 57, 113, 0.08);
-    --shadow-medium: rgba(0, 57, 113, 0.12);
+/* ── Hamburger / Toggle-Menü in der SSI-Navigation ── */
+/* 1. Leere Spans sind dekorative Elemente (Hamburger-Balken via background-color) */
+body > :not(#app):not(script) span:empty {
+  background-color: currentColor !important;
+  border-color: currentColor !important;
+}
+/* 2. Spans in aria-expanded-Toggles (Hamburger-Buttons nutzen dieses Attribut) */
+body > :not(#app):not(script) [aria-expanded] > span:empty,
+body > :not(#app):not(script) [aria-expanded] > span > span:empty,
+body > :not(#app):not(script) [aria-expanded] > div > span:empty {
+  background-color: currentColor !important;
+  border-color: currentColor !important;
+}
+/* 3. SVG-Hamburger-Icons in Buttons / Toggles — stroke & fill erzwingen */
+body > :not(#app):not(script) button svg line,
+body > :not(#app):not(script) button svg path,
+body > :not(#app):not(script) button svg rect,
+body > :not(#app):not(script) [aria-expanded] svg line,
+body > :not(#app):not(script) [aria-expanded] svg path,
+body > :not(#app):not(script) [aria-expanded] svg rect,
+body > :not(#app):not(script) [role='button'] svg line,
+body > :not(#app):not(script) [role='button'] svg path,
+body > :not(#app):not(script) [role='button'] svg rect {
+  stroke: currentColor !important;
+  fill: currentColor !important;
+}
+/* 4. Bootstrap toggler-icon (background-image SVG) — Kontrast per CSS-Filter */
+body > :not(#app):not(script) [class*='toggler-icon'] {
+  filter: brightness(0) saturate(100%) !important;
+}
+:root[data-theme='dark'] body > :not(#app):not(script) [class*='toggler-icon'] {
+  filter: brightness(0) saturate(100%) invert(1) !important;
+}
 
-    --slider-track-from: #7a8fa5;
-    --slider-track-to: #c9984d;
-    --slider-thumb: #c9984d;
+/* App-Modals (Fortschritt, Tastenkürzel) werden per <Teleport> nach
+   #modal-portal (in #app, siehe App.vue) gerendert. Ein eigener Stacking-Context
+   hebt alle teleportierten Modals gemeinsam über die globale SSI-Navigation
+   (z-index 100) und deren Dropdowns (200), hält sie aber unter dem
+   Cookie-Banner (10000). */
+#modal-portal {
+  position: relative;
+  z-index: var(--ds-z-backdrop);
+}
 
-    /* Audio-spezifisch (nicht im Color Extractor vorhanden): Funktionsfarben
-       der Auswahlgrenzen (Start gelb, Ende rot) und Fehlertext. */
-    --cut-start: #b45309;
-    --cut-end: #dc2626;
-    --danger: #dc2626;
+/* Cookie Banner: immer im Vordergrund, über Nav und Dropdowns */
+.cookie-banner,
+.cookie-consent,
+[class*='cookie-banner'],
+[class*='cookie-consent'],
+[id*='cookie-banner'],
+[id*='cookie-consent'] {
+  z-index: 10000 !important;
+  position: fixed !important;
+}
 
-    /* Waveform-Canvas (WaveformEditor liest diese Werte per getComputedStyle). */
-    --wave-bg: #f5f4d6;
-    --wave-axis: #f8e1a9;
-    --wave-color: #014f99;
-    --wave-region: rgba(201, 152, 77, 0.28);
-    --wave-playhead: #003971;
-    --wave-start: #d97706;
-    --wave-end: #dc2626;
+/* Textfarben der SSI-Partials aus den Tokens; die Variablen wechseln mit dem
+   Theme, deshalb gibt es keine Dark-Varianten mehr. Cookie-Banner ausgenommen. */
+body
+  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
+    [id*='cookie']
+  ),
+body
+  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
+    [id*='cookie']
+  )
+  *:not([class*='cookie']):not([id*='cookie']) {
+  color: var(--ds-text) !important;
+}
+body
+  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
+    [id*='cookie']
+  )
+  a:not([class*='cookie']):not([id*='cookie']),
+body
+  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
+    [id*='cookie']
+  )
+  a:not([class*='cookie']):not([id*='cookie'])
+  * {
+  color: var(--ds-link) !important;
+}
+body
+  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
+    [id*='cookie']
+  )
+  a:hover:not([class*='cookie']):not([id*='cookie']),
+body
+  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
+    [id*='cookie']
+  )
+  a:hover:not([class*='cookie']):not([id*='cookie'])
+  * {
+  color: var(--ds-accent) !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Touch / Mobile
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Kein grauer Tap-Highlight, keine 300ms-Klickverzögerung auf Bedienelementen */
+#app button,
+#app [role='button'],
+#app select,
+#app input[type='range'] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Range-Slider im System-Look (Spur Rahmenfarbe, Daumen Akzent, Fokus-Ring).
+   Vertikales Scrollen bleibt möglich, horizontales Ziehen bewegt den Regler. */
+#app input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: var(--ds-radius-full);
+  background: var(--ds-border-strong);
+  outline: none;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+#app input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ds-accent);
+  border: 2px solid var(--ds-surface-1);
+  cursor: pointer;
+}
+#app input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ds-accent);
+  border: 2px solid var(--ds-surface-1);
+  cursor: pointer;
+}
+#app input[type='range']::-moz-range-track {
+  height: 6px;
+  border-radius: var(--ds-radius-full);
+  background: var(--ds-border-strong);
+}
+#app input[type='range']:focus-visible {
+  box-shadow: var(--ds-focus-ring);
+}
+
+/* Auf Touch-Geräten (grober Zeiger) größere Trefferflächen */
+@media (pointer: coarse) {
+  #app input[type='range'] {
+    height: 8px;
   }
-
-  [data-theme='dark'] {
-    --bg-primary: #1a1a2e;
-    --bg-secondary: #16213e;
-    --bg-sidebar: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-    --bg-input: #16213e;
-    --bg-hover: #1f2b47;
-
-    --text-primary: #f9f2d5;
-    --text-secondary: #f8e1a9;
-    --text-tertiary: #7a8fa5;
-    --text-on-accent: #003971;
-
-    --border-color: #014f99;
-    --border-light: #1f2b47;
-    --border-hover: #c9984d;
-
-    --btn-primary-bg: #c9984d;
-    --btn-primary-hover: #f8e1a9;
-    --btn-primary-text: #003971;
-    --btn-secondary-bg: #1f2b47;
-    --btn-secondary-hover: #014f99;
-    --btn-secondary-text: #f9f2d5;
-
-    --accent-bg: #c9984d;
-    --accent-hover: #f8e1a9;
-    --accent-text: #003971;
-
-    --selection-color: #c9984d;
-    --selection-glow: rgba(201, 152, 77, 0.25);
-
-    --shadow-soft: rgba(0, 0, 0, 0.3);
-    --shadow-medium: rgba(0, 0, 0, 0.4);
-
-    --slider-track-from: #7a8fa5;
-    --slider-track-to: #c9984d;
-    --slider-thumb: #f8e1a9;
-
-    --cut-start: #fbbf24;
-    --cut-end: #f87171;
-    --danger: #f87171;
-
-    --wave-bg: #1a1a2e;
-    --wave-axis: #1f2b47;
-    --wave-color: #c9984d;
-    --wave-region: rgba(1, 79, 153, 0.35);
-    --wave-playhead: #f9f2d5;
-    --wave-start: #fbbf24;
-    --wave-end: #f87171;
+  #app input[type='range']::-webkit-slider-thumb {
+    width: 20px;
+    height: 20px;
   }
-
-  /* min-height statt height: #app darf mit seinem Inhalt wachsen, damit der
-     nachfolgende globale Footer NICHT den unteren App-Inhalt (Auswahl-Leiste,
-     Buttons) ueberdeckt. */
-  html,
-  body {
-    min-height: 100%;
-    font-family: 'Supreme', sans-serif;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    transition:
-      background 0.3s ease,
-      color 0.3s ease;
-  }
-
-  body {
-    margin: 0;
-  }
-
-  button,
-  select,
-  input {
-    font-family: inherit;
+  #app input[type='range']::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
   }
 }
 
 /* Komponenten-Klassen in @layer components, damit Tailwind-Utilities sie
-   bei Bedarf (z. B. text-xs, order-*) übersteuern können. */
+   bei Bedarf (z. B. text-xs, order-*) übersteuern können. Regeln wie im
+   Collage Maker: ein 1-px-Rahmen, drei Radien, Gold nur für die Primäraktion
+   und aktive Zustände, Hover ändert Farbe, nie Größe. */
 @layer components {
-  /* ─── Workspace-Shell (identisch zum Color Extractor) ──────────────────────── */
+  /* ─── Workspace-Shell ──────────────────────────────────────────────────── */
 
   .app-page {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background: var(--bg-primary);
-    transition: background 0.3s ease;
+    background: var(--ds-surface-0);
   }
 
   .app-container {
@@ -180,40 +287,47 @@
   .sidebar {
     width: 320px;
     min-width: 320px;
-    background: var(--bg-sidebar);
-    padding: 20px;
+    background: var(--ds-surface-1);
+    padding: var(--ds-space-5);
     display: flex;
     flex-direction: column;
-    border-right: 1px solid var(--border-light);
+    border-right: var(--ds-border-width) solid var(--ds-border);
     overflow-y: auto;
     position: sticky;
     top: var(--workspace-top, 53px);
     height: calc(100vh - var(--workspace-top, 53px));
     align-self: flex-start;
-    transition:
-      background 0.3s ease,
-      border-color 0.3s ease;
   }
 
   .panel-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 20px;
-    min-height: 30px;
+    gap: var(--ds-space-2);
+    margin-bottom: var(--ds-space-5);
+    min-height: var(--ds-control-sm);
   }
 
   .panel-title {
     margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-primary);
-    transition: color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    font-size: var(--ds-text-lg);
+    font-weight: var(--ds-weight-semibold);
+    line-height: var(--ds-leading);
+    color: var(--ds-text);
   }
 
+  /* Badge im Auswahl-Stil (accent-soft + 1-px-Akzentrahmen, Text bleibt ds-text). */
   .panel-badge {
-    color: var(--accent-bg);
+    padding: 0 var(--ds-space-2);
+    border: var(--ds-border-width) solid var(--ds-accent);
+    border-radius: var(--ds-radius-sm);
+    background: var(--ds-accent-soft);
+    color: var(--ds-text);
+    font-size: var(--ds-text-xs);
+    font-weight: var(--ds-weight-semibold);
   }
 
   .workspace-main {
@@ -222,33 +336,30 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 40px;
-    background: var(--bg-secondary);
-    transition: background 0.3s ease;
+    padding: var(--ds-space-10);
+    background: var(--ds-surface-0);
   }
 
   .workspace-main-inner {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: var(--ds-space-5);
     width: 100%;
     max-width: 1000px;
   }
 
   .sidebar-hint {
     margin: 0;
-    font-size: 13px;
-    line-height: 1.45;
-    color: var(--text-secondary);
-    transition: color 0.3s ease;
+    font-size: var(--ds-text-sm);
+    line-height: var(--ds-leading);
+    color: var(--ds-text-2);
   }
 
-  /* Sektions-Rhythmus der Panels (entspricht PanelSection.vue im Extractor). */
+  /* Sektions-Rhythmus der Sidebar-Panels. */
   .panel-section {
-    padding-top: 18px;
-    margin-top: 18px;
-    border-top: 1px solid var(--border-light);
-    transition: border-color 0.3s ease;
+    padding-top: var(--ds-space-4);
+    margin-top: var(--ds-space-4);
+    border-top: var(--ds-border-width) solid var(--ds-border);
   }
 
   .panel-section--first {
@@ -261,49 +372,46 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 12px;
-    min-height: 24px;
+    gap: var(--ds-space-2);
+    margin-bottom: var(--ds-space-3);
   }
 
+  /* Eyebrow: 12 px, 600, Versalien. */
   .panel-section-title {
     margin: 0;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.09em;
+    font-size: var(--ds-text-xs);
+    font-weight: var(--ds-weight-semibold);
+    line-height: var(--ds-leading);
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--text-tertiary);
-    transition: color 0.3s ease;
+    color: var(--ds-text-3);
   }
 
   .panel-section-body {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--ds-space-3);
   }
 
-  /* Kleine Caps-Beschriftung (Slider-Label-Stil des Extractors). */
+  /* Label (13, 500) über Feldern und Slidern. */
   .caps-label {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
-    transition: color 0.3s ease;
+    font-size: var(--ds-text-sm);
+    font-weight: var(--ds-weight-medium);
+    line-height: var(--ds-leading);
+    color: var(--ds-text-2);
   }
 
   .field-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
+    gap: var(--ds-space-3);
   }
 
   .field-row label {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    transition: color 0.3s ease;
+    font-size: var(--ds-text-sm);
+    font-weight: var(--ds-weight-medium);
+    color: var(--ds-text-2);
   }
 
   .field-select,
@@ -311,15 +419,18 @@
     flex: 0 0 auto;
     width: 58%;
     min-width: 0;
-    padding: 7px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: var(--bg-input);
-    color: var(--text-primary);
+    min-height: var(--ds-control-md);
+    padding: 0 var(--ds-space-3);
+    border: var(--ds-border-width) solid var(--ds-border-strong);
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-surface-2);
+    color: var(--ds-text);
     font-family: inherit;
-    font-size: 13px;
-    font-weight: 500;
-    transition: all 0.2s ease;
+    font-size: var(--ds-text-md);
+    font-weight: var(--ds-weight-medium);
+    transition:
+      background-color var(--ds-duration) var(--ds-ease),
+      border-color var(--ds-duration) var(--ds-ease);
   }
 
   .field-select {
@@ -328,268 +439,257 @@
 
   .field-select:hover,
   .field-input:hover {
-    border-color: var(--border-hover);
+    background: var(--ds-surface-3);
   }
 
-  .field-select:focus,
-  .field-input:focus {
+  .field-select:focus-visible,
+  .field-input:focus-visible {
     outline: none;
-    border-color: var(--selection-color);
-    box-shadow: 0 0 0 3px var(--selection-glow);
+    border-color: var(--ds-accent);
+    box-shadow: var(--ds-focus-ring);
+  }
+
+  .field-select:disabled,
+  .field-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .field-input::placeholder {
+    color: var(--ds-text-3);
   }
 
   .export-buttons {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-top: 2px;
+    gap: var(--ds-space-2);
   }
 
+  /* Button (control-md): secondary als Standard, primary in Gold, danger als Text. */
   .export-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 9px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: var(--bg-input);
-    color: var(--text-primary);
+    gap: var(--ds-space-2);
+    min-height: var(--ds-control-md);
+    padding: 0 var(--ds-space-4);
+    border: var(--ds-border-width) solid var(--ds-border-strong);
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-surface-2);
+    color: var(--ds-text);
     font-family: inherit;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: var(--ds-text-md);
+    font-weight: var(--ds-weight-medium);
+    line-height: 1;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      background-color var(--ds-duration) var(--ds-ease),
+      border-color var(--ds-duration) var(--ds-ease),
+      color var(--ds-duration) var(--ds-ease);
+  }
+
+  .export-btn svg {
+    width: var(--ds-icon-sm);
+    height: var(--ds-icon-sm);
+    flex-shrink: 0;
   }
 
   .export-btn:hover:not(:disabled) {
-    background: var(--bg-hover);
-    border-color: var(--border-hover);
+    background: var(--ds-surface-3);
   }
 
   .export-btn-primary {
-    background: var(--btn-primary-bg);
-    border-color: var(--btn-primary-bg);
-    color: var(--btn-primary-text);
+    border-color: transparent;
+    background: var(--ds-accent);
+    color: var(--ds-on-accent);
+    font-weight: var(--ds-weight-semibold);
   }
 
   .export-btn-primary:hover:not(:disabled) {
-    background: var(--btn-primary-hover);
-    border-color: var(--btn-primary-hover);
-    color: var(--btn-primary-text);
+    background: var(--ds-accent-hover);
+  }
+
+  .export-btn-danger {
+    border-color: transparent;
+    background: transparent;
+    color: var(--ds-danger);
   }
 
   .export-btn-danger:hover:not(:disabled) {
-    border-color: var(--danger);
-    color: var(--danger);
+    background: var(--ds-surface-2);
   }
 
   .export-btn:disabled {
-    opacity: 0.35;
+    opacity: 0.45;
     cursor: not-allowed;
   }
 
-  /* Kompakte Werkzeug-Buttons (Stil der Undo/Redo-Leiste des Extractors). */
+  /* Kompakte Werkzeug-Buttons (control-sm). */
   .btn-history {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    min-height: 30px;
-    padding: 7px 8px;
-    border: 1px solid var(--border-color);
-    border-radius: 5px;
-    background: var(--bg-input);
-    color: var(--text-primary);
+    gap: var(--ds-space-1);
+    min-height: var(--ds-control-sm);
+    padding: 0 var(--ds-space-2);
+    border: var(--ds-border-width) solid var(--ds-border-strong);
+    border-radius: var(--ds-radius-sm);
+    background: var(--ds-surface-2);
+    color: var(--ds-text-2);
     font-family: inherit;
-    font-size: 9.5px;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
+    font-size: var(--ds-text-sm);
+    font-weight: var(--ds-weight-medium);
+    line-height: 1;
     white-space: nowrap;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      background-color var(--ds-duration) var(--ds-ease),
+      border-color var(--ds-duration) var(--ds-ease),
+      color var(--ds-duration) var(--ds-ease);
   }
 
   .btn-history svg {
-    width: 13px;
-    height: 13px;
+    width: var(--ds-icon-sm);
+    height: var(--ds-icon-sm);
     flex-shrink: 0;
   }
 
   .btn-history:hover:not(:disabled) {
-    background: var(--bg-hover);
-    border-color: var(--border-hover);
-    color: var(--border-hover);
+    background: var(--ds-surface-3);
+    color: var(--ds-text);
   }
 
   .btn-history:disabled {
-    opacity: 0.35;
+    opacity: 0.45;
     cursor: not-allowed;
   }
 
   .btn-history.is-active {
-    border-color: var(--selection-color);
-    color: var(--selection-color);
-    background: var(--bg-hover);
-    box-shadow: 0 0 0 3px var(--selection-glow);
+    border-color: var(--ds-accent);
+    background: var(--ds-accent-soft);
+    color: var(--ds-text);
   }
 
-  .btn-history.btn-reset:hover:not(:disabled) {
-    border-color: var(--accent-bg);
-    color: var(--accent-bg);
+  .btn-history.btn-danger {
+    border-color: transparent;
+    background: transparent;
+    color: var(--ds-danger);
   }
 
   .btn-history.btn-danger:hover:not(:disabled) {
-    border-color: var(--danger);
-    color: var(--danger);
+    background: var(--ds-surface-2);
+    color: var(--ds-danger);
   }
 
-  /* Player-Transport: runde Buttons in denselben Tokens. */
+  /* Player-Transport: runde Buttons mit 44-px-Touch-Ziel (ds-row-height). */
   .transport-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    height: 48px;
-    min-width: 48px;
-    border: 1px solid var(--border-color);
-    border-radius: 9999px;
-    background: var(--bg-input);
-    color: var(--text-primary);
+    gap: var(--ds-space-2);
+    height: var(--ds-row-height);
+    min-width: var(--ds-row-height);
+    border: var(--ds-border-width) solid var(--ds-border-strong);
+    border-radius: var(--ds-radius-full);
+    background: var(--ds-surface-2);
+    color: var(--ds-text);
     font-family: inherit;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: var(--ds-text-md);
+    font-weight: var(--ds-weight-medium);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      background-color var(--ds-duration) var(--ds-ease),
+      border-color var(--ds-duration) var(--ds-ease),
+      color var(--ds-duration) var(--ds-ease);
   }
 
   .transport-btn:hover:not(:disabled) {
-    background: var(--bg-hover);
-    border-color: var(--border-hover);
-    color: var(--border-hover);
+    background: var(--ds-surface-3);
   }
 
   .transport-btn--primary {
-    background: var(--btn-primary-bg);
-    border-color: var(--btn-primary-bg);
-    color: var(--btn-primary-text);
+    border-color: transparent;
+    background: var(--ds-accent);
+    color: var(--ds-on-accent);
   }
 
   .transport-btn--primary:hover:not(:disabled) {
-    background: var(--btn-primary-hover);
-    border-color: var(--btn-primary-hover);
-    color: var(--btn-primary-text);
+    background: var(--ds-accent-hover);
   }
 
   .transport-btn--wide {
-    padding: 0 16px;
+    padding: 0 var(--ds-space-4);
   }
 
   .transport-btn.is-active {
-    border-color: var(--selection-color);
-    color: var(--selection-color);
-    background: var(--bg-hover);
-    box-shadow: 0 0 0 3px var(--selection-glow);
+    border-color: var(--ds-accent);
+    background: var(--ds-accent-soft);
   }
 
   .transport-btn:disabled {
-    opacity: 0.35;
+    opacity: 0.45;
     cursor: not-allowed;
   }
 
-  /* Kartenfläche im Arbeitsbereich (wie der Bild-Container des Extractors). */
-  .workspace-card {
-    background: var(--bg-primary);
-    border: 1px solid var(--border-light);
-    border-radius: 12px;
-    transition:
-      background 0.3s ease,
-      border-color 0.3s ease;
-  }
-
-  /* Slider (Visualizer-/Extractor-Muster): dünne Verlaufsspur, umrandeter Thumb. */
-  .range-slider {
-    width: 100%;
-    height: 3px;
-    margin: 8px 0;
-    border-radius: 2px;
-    background: linear-gradient(90deg, var(--slider-track-from) 0%, var(--slider-track-to) 100%);
+  /* Fokus statt Glow: jedes Control zeigt bei focus-visible den Fokus-Ring. */
+  .export-btn:focus-visible,
+  .btn-history:focus-visible,
+  .transport-btn:focus-visible,
+  .close-btn:focus-visible {
     outline: none;
-    cursor: pointer;
-    -webkit-appearance: none;
-    appearance: none;
+    box-shadow: var(--ds-focus-ring);
   }
 
-  .range-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--slider-thumb);
-    border: 2px solid #fff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-    transition: transform 0.15s ease;
+  /* Kartenfläche im Arbeitsbereich. */
+  .workspace-card {
+    background: var(--ds-surface-1);
+    border: var(--ds-border-width) solid var(--ds-border);
+    border-radius: var(--ds-radius-md);
   }
 
-  .range-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
-  }
-
-  .range-slider::-moz-range-thumb {
-    width: 12px;
-    height: 12px;
-    box-sizing: border-box;
-    border-radius: 50%;
-    background: var(--slider-thumb);
-    border: 2px solid #fff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-  }
-
-  .range-slider:focus-visible {
-    box-shadow: 0 0 0 3px var(--selection-glow);
-  }
-
-  /* Modale Dialoge (ImagePreviewModal-Muster des Extractors). */
+  /* Modale Dialoge: Backdrop ohne Blur, Fläche surface-1 mit Overlay-Schatten. */
   .modal-overlay {
-    background: rgba(0, 0, 0, 0.8);
+    z-index: var(--ds-z-backdrop);
+    background: rgba(0, 0, 0, 0.5);
   }
 
   .modal-content {
-    background: var(--bg-sidebar);
-    border-radius: 16px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    color: var(--text-primary);
+    border: var(--ds-border-width) solid var(--ds-border);
+    border-radius: var(--ds-radius-lg);
+    background: var(--ds-surface-1);
+    box-shadow: var(--ds-shadow-overlay);
+    color: var(--ds-text);
   }
 
   .modal-header {
-    border-bottom: 1px solid var(--border-light);
+    border-bottom: var(--ds-border-width) solid var(--ds-border);
   }
 
+  /* Icon-Button (control-md, flach). */
   .close-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px;
+    width: var(--ds-control-md);
+    height: var(--ds-control-md);
     border: none;
-    border-radius: 8px;
-    background: var(--btn-secondary-bg);
-    color: var(--btn-secondary-text);
+    border-radius: var(--ds-radius-md);
+    background: transparent;
+    color: var(--ds-text-2);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition:
+      background-color var(--ds-duration) var(--ds-ease),
+      color var(--ds-duration) var(--ds-ease);
   }
 
   .close-btn:hover {
-    background: var(--btn-secondary-hover);
-    color: var(--btn-primary-text);
+    background: var(--ds-surface-2);
+    color: var(--ds-text);
   }
 
   .sidebar-footer {
     margin-top: auto;
-    padding-top: 20px;
+    padding-top: var(--ds-space-5);
   }
 
   @media (min-width: 1600px) {
@@ -612,15 +712,14 @@
       max-height: none;
       overflow-y: visible;
       border-right: none;
-      border-top: 1px solid var(--border-light);
-      padding: 16px;
-      /* Abweichung vom Extractor (bewusst): auf Mobilgeräten bleibt die
-         Waveform oben, Schnitt/Export folgen darunter (bisheriges Verhalten). */
+      border-top: var(--ds-border-width) solid var(--ds-border);
+      padding: var(--ds-space-4);
+      /* Auf Mobilgeräten bleibt die Waveform oben, Schnitt/Export folgen darunter. */
       order: 2;
     }
 
     .workspace-main {
-      padding: 20px 16px;
+      padding: var(--ds-space-5) var(--ds-space-4);
     }
   }
 
@@ -630,26 +729,27 @@
     }
 
     .sidebar {
-      padding: 12px;
+      padding: var(--ds-space-3);
     }
 
     .export-btn {
-      padding: 14px;
-      min-height: 44px;
+      min-height: var(--ds-row-height);
     }
 
     .btn-history {
-      min-height: 40px;
+      min-height: var(--ds-control-lg);
     }
+  }
+}
 
-    .range-slider::-webkit-slider-thumb {
-      width: 20px;
-      height: 20px;
-    }
-
-    .range-slider::-moz-range-thumb {
-      width: 20px;
-      height: 20px;
-    }
+/* === Reduzierte Bewegung === */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

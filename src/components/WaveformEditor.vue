@@ -6,11 +6,14 @@ import { useAudioCutterStore } from '../stores/audioCutter'
 import { useWaveform } from '../composables/useWaveform'
 import { absToView, centerForStart, clampZoom, viewToAbs, viewWindow } from '../utils/zoom'
 import { formatMs } from '../utils/audioMath'
+import { useSettingsStore } from '../stores/settings'
+import { themeColorsV2 } from '../design-system/tokens-v2'
 
 const { t } = useI18n({ useScope: 'global' })
 const store = useAudioCutterStore()
 const { decoded, region, durationMs, selectedDurationMs, canUndo, canRedo } = storeToRefs(store)
 const { draw } = useWaveform()
+const settings = useSettingsStore()
 
 /** Der Nutzer hat per Klick einen Abspielpunkt (ms) gewaehlt. */
 const emit = defineEmits<{ (e: 'seek', ms: number): void }>()
@@ -45,49 +48,21 @@ const moved = ref(false)
 const downX = ref(0)
 const DRAG_THRESHOLD_PX = 3
 
-// Aktives Theme (vom [data-theme]-Attribut der globalen Nav gesteuert).
-function readTheme(): 'light' | 'dark' {
-  return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
-}
-const theme = ref<'light' | 'dark'>(readTheme())
-
-// Canvas-Farben aus den Design-Tokens (--wave-* in src/style.css, Farbschema
-// des Color Extractors). Fallbacks greifen nur, falls das Stylesheet fehlt.
-const WAVE_FALLBACK = {
-  light: {
-    waveform: '#014f99',
-    regionFill: 'rgba(201, 152, 77, 0.28)',
-    regionStartBorder: '#d97706',
-    regionEndBorder: '#dc2626',
-    playhead: '#003971',
-    background: '#f5f4d6',
-    axis: '#f8e1a9',
-  },
-  dark: {
-    waveform: '#c9984d',
-    regionFill: 'rgba(1, 79, 153, 0.35)',
-    regionStartBorder: '#fbbf24',
-    regionEndBorder: '#f87171',
-    playhead: '#f9f2d5',
-    background: '#1a1a2e',
-    axis: '#1f2b47',
-  },
-} as const
-
-// `theme` ist Abhängigkeit, damit nach einem Theme-Wechsel neu gelesen wird.
+// Canvas-Farben aus den Design-Tokens v2 (themeColorsV2, dieselben Werte wie
+// --ds-* in tokens-v2.css). Das Theme kommt aus dem Settings-Store, der auch
+// Theme-Wechsel der globalen Nav übernimmt; ein Wechsel zeichnet neu.
+// Rollen: Wellenform = info, Auswahl = accent-soft, Auswahlanfang = warning
+// (gelb), Auswahlende = danger (rot), Marker = Text, Fläche = Panel.
 const colors = computed(() => {
-  const fb = WAVE_FALLBACK[theme.value]
-  const css = getComputedStyle(document.documentElement)
-  const v = (name: string, fallback: string): string =>
-    css.getPropertyValue(name).trim() || fallback
+  const c = themeColorsV2(settings.theme)
   return {
-    waveform: v('--wave-color', fb.waveform),
-    regionFill: v('--wave-region', fb.regionFill),
-    regionStartBorder: v('--wave-start', fb.regionStartBorder), // gelb: Auswahlanfang
-    regionEndBorder: v('--wave-end', fb.regionEndBorder), // rot: Auswahlende
-    playhead: v('--wave-playhead', fb.playhead),
-    background: v('--wave-bg', fb.background),
-    axis: v('--wave-axis', fb.axis),
+    waveform: c.info,
+    regionFill: c.accentSoft,
+    regionStartBorder: c.warning,
+    regionEndBorder: c.danger,
+    playhead: c.text,
+    background: c.surface1,
+    axis: c.border,
   }
 })
 
@@ -326,8 +301,7 @@ function onPointerCancel(e: PointerEvent): void {
 }
 
 let ro: ResizeObserver | null = null
-let themeObserver: MutationObserver | null = null
-watch([regionStartFrac, regionEndFrac, decoded, playhead, zoom, viewCenterFrac, theme], render)
+watch([regionStartFrac, regionEndFrac, decoded, playhead, zoom, viewCenterFrac, colors], render)
 
 // Neue Datei -> Zoom zuruecksetzen.
 watch(decoded, () => {
@@ -339,17 +313,9 @@ onMounted(() => {
   render()
   ro = new ResizeObserver(render)
   if (canvasRef.value) ro.observe(canvasRef.value)
-  // Theme-Umschaltung (globale Nav setzt [data-theme] auf <html>) beobachten
-  // und die Canvas-Farben neu zeichnen.
-  themeObserver = new MutationObserver(() => {
-    const next = readTheme()
-    if (next !== theme.value) theme.value = next
-  })
-  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
 })
 onBeforeUnmount(() => {
   ro?.disconnect()
-  themeObserver?.disconnect()
 })
 
 defineExpose({
@@ -390,7 +356,7 @@ defineExpose({
           :disabled="!canUndo"
           @click="store.undo()"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 14 4 9l5-5" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 9h11a5 5 0 0 1 0 10h-2" />
           </svg>
@@ -403,7 +369,7 @@ defineExpose({
           :disabled="!canRedo"
           @click="store.redo()"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="m15 14 5-5-5-5" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M20 9H9a5 5 0 0 0 0 10h2" />
           </svg>
@@ -417,7 +383,7 @@ defineExpose({
           :title="t('waveform.followMarker')"
           @click="followMarker = !followMarker"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
             <circle cx="12" cy="12" r="3" />
             <path stroke-linecap="round" d="M12 2v3M12 19v3M2 12h3M19 12h3" />
           </svg>
@@ -433,11 +399,11 @@ defineExpose({
           :disabled="!canZoomOut"
           @click="zoomOut"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
             <path stroke-linecap="round" d="M5 12h14" />
           </svg>
         </button>
-        <span class="w-12 text-center font-mono text-xs font-bold text-ink-soft">{{ zoomLabel }}</span>
+        <span class="w-12 text-center font-mono text-xs font-bold text-ink-2">{{ zoomLabel }}</span>
         <button
           class="btn-history"
           :title="t('waveform.zoomIn')"
@@ -445,7 +411,7 @@ defineExpose({
           :disabled="!canZoomIn"
           @click="zoomIn"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
             <path stroke-linecap="round" d="M12 5v14M5 12h14" />
           </svg>
         </button>
@@ -464,7 +430,7 @@ defineExpose({
     <canvas
       id="waveform-canvas"
       ref="canvasRef"
-      class="h-40 w-full cursor-crosshair touch-none select-none rounded-xl border-2 border-dashed border-line bg-page"
+      class="h-40 w-full cursor-crosshair touch-none select-none rounded-md border border-line bg-surface-1"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
@@ -477,7 +443,7 @@ defineExpose({
     <div
       v-if="isZoomed"
       ref="scrollTrackRef"
-      class="relative mt-2 h-3 w-full cursor-pointer touch-none select-none rounded-full border border-line-light bg-page"
+      class="relative mt-2 h-3 w-full cursor-pointer touch-none select-none rounded-full border border-line bg-surface-2"
       role="scrollbar"
       aria-orientation="horizontal"
       aria-controls="waveform-canvas"
@@ -493,7 +459,7 @@ defineExpose({
     >
       <div
         class="pointer-events-none absolute top-0 h-full rounded-full transition-colors"
-        :class="scrollDragging ? 'bg-primary' : 'bg-accent'"
+        :class="scrollDragging ? 'bg-accent-hover' : 'bg-accent'"
         :style="scrollThumb"
       ></div>
     </div>
@@ -501,24 +467,24 @@ defineExpose({
     <!-- Live-Werte: Gesamtdauer · Auswahl · Cursor · Restdauer (live) -->
     <div class="mt-2 flex items-start justify-between gap-2 font-mono text-xs font-bold">
       <div class="text-left">
-        <div class="caps-label font-sans !text-ink-muted">{{ t('waveform.total') }}</div>
+        <div class="caps-label font-sans !text-ink-3">{{ t('waveform.total') }}</div>
         <div class="text-ink">{{ msLabel(durationMs) }}</div>
       </div>
       <div class="text-center">
-        <div class="caps-label font-sans !text-ink-muted">{{ t('waveform.selection') }}</div>
-        <div class="text-ink-soft">{{ msLabel(selectedDurationMs) }}</div>
+        <div class="caps-label font-sans !text-ink-3">{{ t('waveform.selection') }}</div>
+        <div class="text-ink-2">{{ msLabel(selectedDurationMs) }}</div>
       </div>
       <div class="text-center">
-        <div class="caps-label font-sans !text-ink-muted">{{ t('waveform.cursor') }}</div>
-        <div class="text-ink-soft">{{ cursorLiveMs !== null ? msLabel(cursorLiveMs) : '–' }}</div>
+        <div class="caps-label font-sans !text-ink-3">{{ t('waveform.cursor') }}</div>
+        <div class="text-ink-2">{{ cursorLiveMs !== null ? msLabel(cursorLiveMs) : '–' }}</div>
       </div>
       <div class="text-right">
-        <div class="caps-label font-sans !text-ink-muted">{{ t('waveform.remaining') }}</div>
+        <div class="caps-label font-sans !text-ink-3">{{ t('waveform.remaining') }}</div>
         <div class="text-ink">{{ remainingMs !== null ? msLabel(remainingMs) : '–' }}</div>
       </div>
     </div>
 
-    <p class="sidebar-hint mt-1 text-center !text-xs !text-ink-muted">
+    <p class="sidebar-hint mt-1 text-center !text-xs !text-ink-3">
       {{ t('waveform.hint') }}
     </p>
   </div>

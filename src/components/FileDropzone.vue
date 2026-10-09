@@ -3,9 +3,9 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 /**
- * Datei-Eingabe in zwei Darstellungen (Color-Extractor-Muster):
+ * Datei-Eingabe in zwei Darstellungen:
  * - Standard: große gestrichelte Ablagefläche im Arbeitsbereich.
- * - compact:  Akzent-Upload-Button für die Sidebar.
+ * - compact:  Upload-Button (Sekundär) für die Sidebar.
  * Beide emittieren `file` mit der gewählten/abgelegten Datei.
  */
 withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
@@ -48,7 +48,7 @@ function onDrop(e: DragEvent): void {
     @dragleave.prevent="isOver = false"
     @drop.prevent="onDrop"
   >
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="17 8 12 3 7 8" />
       <line x1="12" y1="3" x2="12" y2="15" />
@@ -68,7 +68,7 @@ function onDrop(e: DragEvent): void {
     @dragleave.prevent="isOver = false"
     @drop.prevent="onDrop"
   >
-    <svg class="dropzone-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+    <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
       <path d="M9 18V5l12-2v13" />
       <circle cx="6" cy="18" r="3" />
       <circle cx="18" cy="16" r="3" />
@@ -85,32 +85,45 @@ function onDrop(e: DragEvent): void {
 </template>
 
 <style scoped>
-/* Sidebar-Upload: identisch zum ImageUploader des Color Extractors. */
+/* Sidebar-Upload: Sekundär-Button (die Goldfläche gehört der Schnitt-Aktion). */
 .upload-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  padding: 16px 24px;
-  border: none;
-  border-radius: 8px;
-  background: var(--accent-bg);
-  color: var(--accent-text);
+  min-height: var(--ds-control-lg);
+  padding: var(--ds-space-3) var(--ds-space-6);
+  border: var(--ds-border-width) solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-2);
+  color: var(--ds-text);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color var(--ds-duration) var(--ds-ease),
+    border-color var(--ds-duration) var(--ds-ease);
+}
+
+.upload-btn svg {
+  width: var(--ds-icon-md);
+  height: var(--ds-icon-md);
 }
 
 .upload-btn:hover {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
+  background: var(--ds-surface-3);
+}
+
+.upload-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--ds-focus-ring);
 }
 
 .upload-btn.dragging {
-  background: var(--accent-hover);
-  box-shadow: 0 0 0 3px var(--selection-glow);
+  border-color: var(--ds-accent);
+  background: var(--ds-accent-soft);
 }
 
-/* Ablagefläche: Platzhalter-Container des Color Extractors. */
+/* Ablagefläche: Panel-Fläche mit gestricheltem 1-px-Rahmen; beim Ziehen
+   im Auswahl-Stil (accent-soft + Akzentrahmen). */
 .dropzone {
   display: flex;
   flex-direction: column;
@@ -118,72 +131,70 @@ function onDrop(e: DragEvent): void {
   justify-content: center;
   width: 100%;
   min-height: 360px;
-  padding: 40px;
+  padding: var(--ds-space-10);
   text-align: center;
-  background: var(--bg-primary);
-  border: 2px dashed var(--border-color);
-  border-radius: 12px;
+  background: var(--ds-surface-1);
+  border: var(--ds-border-width) dashed var(--ds-border-strong);
+  border-radius: var(--ds-radius-lg);
   cursor: pointer;
   transition:
-    background 0.3s ease,
-    border-color 0.3s ease;
+    background-color var(--ds-duration) var(--ds-ease),
+    border-color var(--ds-duration) var(--ds-ease);
 }
 
 .dropzone:hover {
-  border-color: var(--border-hover);
+  background: var(--ds-surface-2);
 }
 
 .dropzone:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px var(--selection-glow);
+  box-shadow: var(--ds-focus-ring);
 }
 
 .dropzone.dragging {
-  border-color: var(--selection-color);
-  border-width: 3px;
-  background: var(--bg-hover);
+  border-color: var(--ds-accent);
+  background: var(--ds-accent-soft);
 }
 
 .dropzone-icon {
-  margin-bottom: 20px;
-  color: var(--text-tertiary);
-  transition: color 0.3s ease;
+  width: 32px;
+  height: 32px;
+  margin-bottom: var(--ds-space-4);
+  color: var(--ds-text-3);
 }
 
 .dropzone-text {
-  margin: 0 0 8px;
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  transition: color 0.3s ease;
+  margin: 0 0 var(--ds-space-2);
+  font-size: var(--ds-text-lg);
+  font-weight: var(--ds-weight-medium);
+  color: var(--ds-text);
 }
 
+/* Gold ist als Text im Light-Theme tabu -> Link-Farbe. */
 .dropzone-link {
-  color: var(--accent-bg);
+  color: var(--ds-link);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
 .dropzone-hint {
   margin: 0;
-  font-size: 14px;
-  color: var(--text-tertiary);
-  transition: color 0.3s ease;
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-2);
 }
 
 .dropzone-hint + .dropzone-hint {
-  margin-top: 4px;
+  margin-top: var(--ds-space-1);
 }
 
 @media (max-width: 480px) {
   .upload-btn {
-    padding: 14px 18px;
-    min-height: 44px;
+    min-height: var(--ds-row-height);
   }
 
   .dropzone {
     min-height: 260px;
-    padding: 24px;
+    padding: var(--ds-space-6);
   }
 }
 </style>
