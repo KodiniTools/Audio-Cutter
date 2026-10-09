@@ -81,7 +81,7 @@ const canReset = computed(
       <label class="caps-label mb-1.5 block">{{ t('time.start') }}</label>
       <input
         v-model="startText"
-        class="field-input font-mono !w-full !text-lg !font-bold text-cut-start"
+        class="field-input font-mono !w-full !text-lg !font-bold text-warning"
         inputmode="decimal"
         :placeholder="t('time.placeholder')"
       />
@@ -93,15 +93,15 @@ const canReset = computed(
           :max="maxMs"
           step="1"
           :aria-label="t('time.start') + ' (ms)'"
-          class="field-input font-mono !w-32 !font-bold text-cut-start"
+          class="field-input font-mono !w-32 !font-bold text-warning"
         />
-        <span class="text-xs text-ink-muted">ms</span>
+        <span class="text-xs text-ink-3">ms</span>
       </div>
       <div class="mt-2 flex flex-wrap gap-1">
         <button
           v-for="d in nudges"
           :key="'s' + d"
-          class="btn-history font-mono !text-[11px] !normal-case"
+          class="btn-history font-mono !text-xs"
           @click="nudgeStart(d)"
         >
           {{ fmtDelta(d) }}ms
@@ -113,7 +113,7 @@ const canReset = computed(
       <label class="caps-label mb-1.5 block">{{ t('time.end') }}</label>
       <input
         v-model="endText"
-        class="field-input font-mono !w-full !text-lg !font-bold text-cut-end"
+        class="field-input font-mono !w-full !text-lg !font-bold text-danger"
         inputmode="decimal"
         :placeholder="t('time.placeholder')"
       />
@@ -125,15 +125,15 @@ const canReset = computed(
           :max="maxMs"
           step="1"
           :aria-label="t('time.end') + ' (ms)'"
-          class="field-input font-mono !w-32 !font-bold text-cut-end"
+          class="field-input font-mono !w-32 !font-bold text-danger"
         />
-        <span class="text-xs text-ink-muted">ms</span>
+        <span class="text-xs text-ink-3">ms</span>
       </div>
       <div class="mt-2 flex flex-wrap gap-1">
         <button
           v-for="d in nudges"
           :key="'e' + d"
-          class="btn-history font-mono !text-[11px] !normal-case"
+          class="btn-history font-mono !text-xs"
           @click="nudgeEnd(d)"
         >
           {{ fmtDelta(d) }}ms
@@ -142,22 +142,22 @@ const canReset = computed(
     </div>
 
     <div class="workspace-card flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm sm:col-span-2">
-      <span class="text-ink-soft">
+      <span class="text-ink-2">
         {{ t('time.selection') }} <span class="font-mono font-semibold text-ink">{{ formatMs(selectedDurationMs) }}</span>
-        <span class="text-ink-muted"> / {{ formatMs(durationMs) }}</span>
+        <span class="text-ink-3"> / {{ formatMs(durationMs) }}</span>
       </span>
       <div class="flex items-center gap-3">
-        <span v-if="!regionValidation.valid && regionValidation.errorCode" class="font-medium text-cut-start">
+        <span v-if="!regionValidation.valid && regionValidation.errorCode" class="font-medium text-warning">
           {{ t(`validation.${regionValidation.errorCode}`) }}
         </span>
-        <span v-else-if="regionValidation.valid" class="font-medium text-accent">{{ t('time.valid') }}</span>
+        <span v-else-if="regionValidation.valid" class="font-medium text-success">{{ t('time.valid') }}</span>
         <button
           class="btn-history btn-reset"
           :disabled="!canReset"
           :title="t('time.reset')"
           @click="resetSelection"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v6h6M20 20v-6h-6" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M20 10a8 8 0 0 0-14.9-3M4 14a8 8 0 0 0 14.9 3" />
           </svg>

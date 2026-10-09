@@ -536,14 +536,14 @@ onBeforeUnmount(() => {
 <template>
   <div class="app-page">
     <div class="app-container">
-      <!-- Linke Sidebar (Color-Extractor-Shell): Datei, Schnitt, Export -->
+      <!-- Linke Sidebar (Workspace-Shell): Datei, Schnitt, Export -->
       <aside class="sidebar">
         <div class="panel-header">
           <h1 class="panel-title">
             {{ t('app.title') }} <span class="panel-badge">{{ t('app.badge') }}</span>
           </h1>
           <button
-            class="btn-history h-[30px] w-[30px] !p-0 !text-[13px]"
+            class="btn-history w-7 !p-0"
             :title="`${t('shortcuts.open')} (?)`"
             :aria-label="t('shortcuts.open')"
             @click="showHelp = true"
@@ -571,7 +571,7 @@ onBeforeUnmount(() => {
         />
 
         <div class="sidebar-footer">
-          <p class="border-t border-line-light pt-[18px] text-xs text-ink-muted">
+          <p class="border-t border-line pt-[18px] text-xs text-ink-3">
             {{ t('app.footer') }}
           </p>
         </div>
@@ -579,7 +579,7 @@ onBeforeUnmount(() => {
 
       <!-- Arbeitsbereich: Datei-Info, Waveform, Player, Zeitfelder -->
       <!-- Mit geladener Datei oben ausrichten (Editor ist höher als der Viewport-
-           Mittelpunkt sinnvoll zulässt); leer zentriert wie im Extractor. -->
+           Mittelpunkt sinnvoll zulässt); leer zentriert. -->
       <main class="workspace-main" :class="{ '!items-start': hasAudio }">
         <div class="workspace-main-inner">
           <FileDropzone v-if="!hasAudio" @file="onFile" />
@@ -594,10 +594,11 @@ onBeforeUnmount(() => {
             <!-- Overlay: neue Datei über dem Editor ablegen ersetzt die aktuelle. -->
             <div
               v-if="draggingFile"
-              class="pointer-events-none absolute inset-0 z-40 flex items-center justify-center rounded-xl border-[3px] border-dashed border-selection [background:color-mix(in_srgb,var(--bg-hover)_92%,transparent)] backdrop-blur-sm"
+              class="pointer-events-none absolute inset-0 z-40 overflow-hidden rounded-md border border-dashed border-accent bg-surface-1"
             >
-              <div class="flex flex-col items-center gap-2 text-ink-soft">
-                <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <!-- Auswahl-Stil: accent-soft über der deckenden Panel-Fläche -->
+              <div class="flex h-full w-full flex-col items-center justify-center gap-2 bg-accent-soft text-ink">
+                <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0L8 8m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
                 </svg>
                 <span class="text-sm font-medium">{{ t('dropzone.replaceHint') }}</span>
@@ -606,12 +607,12 @@ onBeforeUnmount(() => {
 
             <div class="workspace-card flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
               <span class="truncate font-semibold text-ink">{{ meta?.name }}</span>
-              <span class="font-mono text-xs text-ink-muted">
+              <span class="font-mono text-xs text-ink-3">
                 {{ meta?.sampleRate }} Hz · {{ meta?.numberOfChannels }} {{ t('meta.channels') }} ·
                 {{ formatMs(meta?.durationMs ?? 0) }}
               </span>
               <button class="btn-history btn-danger" :title="t('meta.changeFile')" @click="changeFile">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7" />
                 </svg>
                 {{ t('meta.changeFile') }}
@@ -702,7 +703,7 @@ onBeforeUnmount(() => {
                 v-if="canApplyCursor"
                 class="flex flex-wrap items-center justify-center gap-2 text-sm"
               >
-                <span class="text-ink-soft">
+                <span class="text-ink-2">
                   {{ t('player.cursorAt') }}
                   <span class="font-mono font-semibold text-ink">{{ formatMs(cursorMs ?? 0) }}</span>
                 </span>

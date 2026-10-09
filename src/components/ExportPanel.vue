@@ -96,7 +96,7 @@ const showBitrate = computed(() => FORMAT_META[exportOptions.value.format].lossy
 
       <div class="export-buttons">
         <button class="export-btn export-btn-primary" :disabled="!canCut" @click="emit('cut')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
             <circle cx="6" cy="6" r="3" />
             <circle cx="6" cy="18" r="3" />
             <line x1="20" y1="4" x2="8.12" y2="15.88" />
@@ -156,7 +156,6 @@ const showBitrate = computed(() => FORMAT_META[exportOptions.value.format].lossy
           max="320"
           step="32"
           :value="exportOptions.mp3Bitrate"
-          class="range-slider"
           @input="
             store.patchExportOptions({
               mp3Bitrate: Number(($event.target as HTMLInputElement).value),
@@ -168,7 +167,7 @@ const showBitrate = computed(() => FORMAT_META[exportOptions.value.format].lossy
       <!-- Aktion -->
       <div class="export-buttons">
         <button v-if="!busy" class="export-btn" :disabled="!canExport" @click="emit('export')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="7 10 12 15 17 10" />
             <line x1="12" y1="15" x2="12" y2="3" />
@@ -181,10 +180,18 @@ const showBitrate = computed(() => FORMAT_META[exportOptions.value.format].lossy
 
         <template v-if="result">
           <button class="export-btn export-btn-primary" @click="emit('download')">
-            ⬇ {{ t('export.download', { name: result.filename }) }}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span class="truncate">{{ t('export.download', { name: result.filename }) }}</span>
           </button>
           <button class="export-btn export-btn-danger" @click="emit('delete')">
-            🗑 {{ t('export.delete') }}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7" />
+            </svg>
+            <span>{{ t('export.delete') }}</span>
           </button>
         </template>
       </div>

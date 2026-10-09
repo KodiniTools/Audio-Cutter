@@ -44,11 +44,11 @@ const touchRows = computed<string[]>(() => [
 </script>
 
 <template>
-  <Teleport to="body">
+  <Teleport defer to="#modal-portal">
     <Transition name="help-fade">
       <div
         v-if="open"
-        class="modal-overlay fixed inset-0 z-[60] flex items-center justify-center p-5"
+        class="modal-overlay fixed inset-0 flex items-center justify-center p-5"
         role="dialog"
         aria-modal="true"
         :aria-label="t('shortcuts.title')"
@@ -66,7 +66,7 @@ const touchRows = computed<string[]>(() => [
               :aria-label="t('shortcuts.close')"
               @click="emit('close')"
             >
-              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
                 <path stroke-linecap="round" d="M6 6l12 12M18 6 6 18" />
               </svg>
             </button>
@@ -76,16 +76,16 @@ const touchRows = computed<string[]>(() => [
             <div class="panel-section-title mb-2">
               {{ t('shortcuts.keyboard') }}
             </div>
-            <ul class="flex flex-col divide-y divide-line-light">
+            <ul class="flex flex-col divide-y divide-line">
               <li v-for="row in rows" :key="row.desc" class="flex items-center justify-between gap-4 py-1.5">
-                <span class="text-sm text-ink-soft">{{ row.desc }}</span>
+                <span class="text-sm text-ink-2">{{ row.desc }}</span>
                 <span class="flex shrink-0 items-center gap-1">
                   <template v-for="(chord, ci) in row.chords" :key="ci">
-                    <span v-if="ci > 0" class="text-xs text-ink-muted">/</span>
+                    <span v-if="ci > 0" class="text-xs text-ink-3">/</span>
                     <template v-for="(k, ki) in chord" :key="ki">
-                      <span v-if="ki > 0" class="text-xs text-ink-muted">+</span>
+                      <span v-if="ki > 0" class="text-xs text-ink-3">+</span>
                       <kbd
-                        class="inline-flex min-w-[1.6rem] items-center justify-center rounded-[5px] border border-line bg-field px-1.5 py-0.5 font-mono text-xs font-bold text-ink"
+                        class="inline-flex min-w-[1.6rem] items-center justify-center rounded-sm border border-line-strong border-b-2 bg-surface-2 px-1.5 py-0.5 font-mono text-xs font-semibold text-ink"
                         >{{ k }}</kbd
                       >
                     </template>
@@ -101,9 +101,9 @@ const touchRows = computed<string[]>(() => [
               <li
                 v-for="row in touchRows"
                 :key="row"
-                class="flex items-center gap-2 text-sm text-ink-soft"
+                class="flex items-center gap-2 text-sm text-ink-2"
               >
-                <svg viewBox="0 0 24 24" class="h-3.5 w-3.5 shrink-0 text-accent" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-ink-3" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 11V6a2 2 0 1 1 4 0v5m0-1a2 2 0 1 1 4 0v3a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-3l-2-3a1.5 1.5 0 0 1 2.5-1.6L7 13" />
                 </svg>
                 {{ row }}
@@ -119,7 +119,7 @@ const touchRows = computed<string[]>(() => [
 <style scoped>
 .help-fade-enter-active,
 .help-fade-leave-active {
-  transition: opacity 0.15s ease;
+  transition: opacity var(--ds-duration-slow) var(--ds-ease);
 }
 .help-fade-enter-from,
 .help-fade-leave-to {
