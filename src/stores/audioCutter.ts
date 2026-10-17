@@ -50,6 +50,7 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
   const exportOptions = ref<ExportOptions>({
     format: 'wav',
     mp3Bitrate: 192,
+    wavBitDepth: 'pcm16',
     fadeInMs: 0,
     fadeOutMs: 0,
     cutMode: 'keep',
@@ -130,6 +131,7 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
     if ('format' in patch) return 'format'
     if ('cutMode' in patch) return 'cutMode'
     if ('mp3Bitrate' in patch) return 'bitrate'
+    if ('wavBitDepth' in patch) return 'wavBitDepth'
     return 'fade'
   }
   /** Ein evtl. vorhandenes Export-Ergebnis verwerfen (nach Puffer-Änderungen). */
@@ -241,6 +243,7 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
     if (
       next.format === cur.format &&
       next.mp3Bitrate === cur.mp3Bitrate &&
+      next.wavBitDepth === cur.wavBitDepth &&
       next.fadeInMs === cur.fadeInMs &&
       next.fadeOutMs === cur.fadeOutMs &&
       next.cutMode === cur.cutMode

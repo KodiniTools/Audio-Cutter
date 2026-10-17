@@ -100,7 +100,7 @@ export function useAudioEngine() {
 
     switch (format) {
       case 'wav': {
-        const wav = encodeWav(channels, sampleRate)
+        const wav = encodeWav(channels, sampleRate, options.wavBitDepth)
         onProgress?.(1)
         return result(wav)
       }

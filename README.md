@@ -6,7 +6,7 @@ Zwei Verarbeitungsmodi:
 - **Browser (Default, Privacy First):** Web Audio API dekodiert die Datei, es wird
   **sample-genau** geschnitten (bei 44,1 kHz ≈ 0,023 ms pro Sample) und lokal
   exportiert. **Kein Upload.**
-  - **WAV** (verlustfrei), **MP3** (`lamejs`) und **FLAC** (eigener verlustfreier
+  - **WAV** (verlustfrei, 16/24 bit PCM oder 32 bit Float), **MP3** (`lamejs`) und **FLAC** (eigener verlustfreier
     Encoder, `utils/flacEncoder.ts`) – immer verfügbar. MP3 und FLAC laufen in
     einem **Web Worker** (Main-Thread bleibt frei), mit Fortschritt und Abbruch.
   - **AAC (M4A)** und **Opus (WebM)** über die **WebCodecs-API**, Container via
@@ -36,7 +36,7 @@ Reine Logik ist von Browser-APIs getrennt und damit voll testbar:
 ```
 src/utils/audioMath.ts     ms<->samples, Zeitformat/-parsing, Validierung   (pure)
 src/utils/sliceBuffer.ts   sample-genaues Schneiden + lineare Fades          (pure)
-src/utils/wavEncoder.ts    16-bit-PCM-WAV-Encoder                            (pure)
+src/utils/wavEncoder.ts    WAV-Encoder (16/24 bit PCM, 32 bit Float)         (pure)
 src/utils/waveform.ts      Min/Max-Peaks pro Pixel                           (pure)
 src/utils/mp3Encoder.ts    MP3-Block-Encoding, Encoder injizierbar           (pure)
 src/utils/flacEncoder.ts   FLAC-Encoder (16 bit, fixe Prädiktoren, Rice)     (pure)

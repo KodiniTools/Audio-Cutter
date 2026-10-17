@@ -79,6 +79,11 @@ describe('audioCutter store', () => {
     expect(s.exportOptions.format).toBe('mp3')
     expect(s.exportOptions.mp3Bitrate).toBe(256)
     expect(s.exportOptions.fadeInMs).toBe(0) // unverändert
+    expect(s.exportOptions.wavBitDepth).toBe('pcm16') // Standard
+    s.patchExportOptions({ wavBitDepth: 'pcm24' })
+    expect(s.exportOptions.wavBitDepth).toBe('pcm24')
+    s.undo()
+    expect(s.exportOptions.wavBitDepth).toBe('pcm16')
   })
 
   it('setProgress clampt 0..1', () => {

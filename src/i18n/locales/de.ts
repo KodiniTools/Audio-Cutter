@@ -106,6 +106,7 @@ export default {
     },
     format: 'Format',
     bitrate: 'Bitrate: {value} kbps',
+    bitDepth: 'Bittiefe',
     fadeIn: 'Fade-In (ms)',
     fadeOut: 'Fade-Out (ms)',
     cut: 'Schneiden',
