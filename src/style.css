@@ -47,6 +47,15 @@
   color-scheme: light;
 }
 
+/* === Schrift auf Akzentflächen (goldene Buttons) ===
+   Bewusst dunkler als --ds-on-accent (Navy), damit Text und Icons auf dem
+   unveränderten Gold in beiden Themes deutlich lesbar sind:
+   hell #c9984d ≈ 7,7:1 (vorher 6,2), Hover #b8842f ≈ 6,0:1 (vorher 4,9),
+   dunkel #d4a257 ≈ 8,6:1 (vorher 8,1). */
+:root {
+  --ac-on-accent-strong: #0c0904;
+}
+
 /* === Body ===
    min-height statt height: #app darf mit seinem Inhalt wachsen, damit der
    nachfolgende globale Footer NICHT den unteren App-Inhalt überdeckt. */
@@ -501,8 +510,13 @@ body
   .export-btn-primary {
     border-color: transparent;
     background: var(--ds-accent);
-    color: var(--ds-on-accent);
+    color: var(--ac-on-accent-strong);
     font-weight: var(--ds-weight-semibold);
+  }
+
+  /* Icon-Striche auf Gold kräftiger (Attribut 1.75 wirkt dort zu dünn). */
+  .export-btn-primary svg {
+    stroke-width: 2.25;
   }
 
   .export-btn-primary:hover:not(:disabled) {
@@ -610,7 +624,7 @@ body
   .transport-btn--primary {
     border-color: transparent;
     background: var(--ds-accent);
-    color: var(--ds-on-accent);
+    color: var(--ac-on-accent-strong);
   }
 
   .transport-btn--primary:hover:not(:disabled) {
