@@ -1,14 +1,21 @@
 // src/composables/useAudioEngine.ts
 // Browser-seitige Audio-Verarbeitung (Web Audio API + lamejs).
 // Kapselt alle nicht-testbaren Browser-APIs; die eigentliche Logik liegt in ../utils.
-// MP3-Encoding läuft im Web Worker (Fortschritt + Abbruch); Sync-Fallback ohne Worker.
+// MP3- und FLAC-Encoding laufen im Web Worker (Fortschritt + Abbruch); Sync-Fallback
+// ohne Worker. AAC/Opus nutzen die WebCodecs-API (siehe useWebCodecsEncoder).
 
 import { Mp3Encoder } from '@breezystack/lamejs'
 import type { AudioMeta, CutRegion, CutResult, DecodedAudio, ExportOptions } from '../types/audio'
 import { samplesToMs } from '../utils/audioMath'
 import { encodeWav } from '../utils/wavEncoder'
 import { channelCountFor, encodeMp3Blocks } from '../utils/mp3Encoder'
+import { encodeFlac, FLAC_MAX_CHANNELS } from '../utils/flacEncoder'
+import { floatToInt16 } from '../utils/sliceBuffer'
+import { FORMAT_META } from '../utils/formats'
+import type { FlacWorkerRequest } from '../types/flacWorker'
 import { encodeMp3InWorker, workerSupported } from './useMp3Worker'
+import { runEncoderWorker } from './useEncoderWorker'
+import { encodeWithWebCodecs } from './useWebCodecsEncoder'
 
 /** Optionale Steuerung für {@link useAudioEngine.encode}. */
 export interface CutControls {
@@ -61,11 +68,12 @@ export function useAudioEngine() {
   }
 
   /**
-   * Kodiert den (bereits geschnittenen) Puffer nach WAV oder MP3.
+   * Kodiert den (bereits geschnittenen) Puffer im Browser.
    * Die Schnitte + Fades wurden im kumulativen Editor bereits auf den Puffer
    * angewendet – hier wird nur noch der finale Zustand encodiert.
-   * MP3 läuft im Worker (nicht-blockierend); WAV bleibt synchron.
-   * @throws DOMException('AbortError') bei Abbruch, Error('emptyRegion') bei leerem Puffer.
+   * - WAV: synchron · MP3/FLAC: Worker (nicht-blockierend) · AAC/Opus: WebCodecs
+   * @throws DOMException('AbortError') bei Abbruch, Error('emptyRegion') bei leerem Puffer,
+   *         Error('formatNotInBrowser') für Formate ohne Browser-Encoder (OGG).
    */
   async function encode(
     decoded: DecodedAudio,
@@ -81,38 +89,68 @@ export function useAudioEngine() {
 
     const durationMs = samplesToMs(channels[0].length, sampleRate)
     const stem = baseName.replace(/\.[^.]+$/, '') || 'audio'
-
-    // Der Browser-Modus kodiert nur WAV + MP3; alles Übrige liefert der Server.
-    if (options.format !== 'wav' && options.format !== 'mp3') {
-      throw new Error('formatNotInBrowser')
-    }
-
-    if (options.format === 'wav') {
-      const wav = encodeWav(channels, sampleRate)
-      onProgress?.(1)
-      return {
-        blob: new Blob([wav], { type: 'audio/wav' }),
-        filename: `${stem}_cut.wav`,
-        format: 'wav',
-        durationMs,
-      }
-    }
-
-    // MP3: bevorzugt im Worker (Main-Thread bleibt frei), sonst synchroner Fallback.
-    let mp3: Uint8Array<ArrayBuffer>
-    if (workerSupported()) {
-      mp3 = await encodeMp3InWorker(channels, sampleRate, options.mp3Bitrate, { signal, onProgress })
-    } else {
-      if (signal?.aborted) throw new DOMException('Abgebrochen.', 'AbortError')
-      const encoder = new Mp3Encoder(channelCountFor(channels), sampleRate, options.mp3Bitrate)
-      mp3 = encodeMp3Blocks(channels, encoder, onProgress)
-    }
-
-    return {
-      blob: new Blob([mp3], { type: 'audio/mpeg' }),
-      filename: `${stem}_cut.mp3`,
-      format: 'mp3',
+    const format = options.format
+    const fmt = FORMAT_META[format]
+    const result = (data: BlobPart): CutResult => ({
+      blob: new Blob([data], { type: fmt.mime }),
+      filename: `${stem}_cut.${fmt.ext}`,
+      format,
       durationMs,
+    })
+
+    switch (format) {
+      case 'wav': {
+        const wav = encodeWav(channels, sampleRate)
+        onProgress?.(1)
+        return result(wav)
+      }
+      case 'mp3': {
+        // Kopien übergeben: Der Transfer an den Worker würde sonst die Puffer des
+        // Editors (Waveform, Vorschau, Undo) "detachen".
+        let mp3: Uint8Array<ArrayBuffer>
+        if (workerSupported()) {
+          const copies = channels.slice(0, 2).map((c) => c.slice())
+          mp3 = await encodeMp3InWorker(copies, sampleRate, options.mp3Bitrate, { signal, onProgress })
+        } else {
+          if (signal?.aborted) throw new DOMException('Abgebrochen.', 'AbortError')
+          const encoder = new Mp3Encoder(channelCountFor(channels), sampleRate, options.mp3Bitrate)
+          mp3 = encodeMp3Blocks(channels, encoder, onProgress)
+        }
+        return result(mp3)
+      }
+      case 'flac': {
+        // 16-bit-Kopien erzeugen (halbe Datenmenge) und per Transfer übergeben.
+        const pcm = channels.slice(0, FLAC_MAX_CHANNELS).map(floatToInt16)
+        let flac: Uint8Array<ArrayBuffer>
+        if (workerSupported()) {
+          const req: FlacWorkerRequest = { channels: pcm, sampleRate }
+          flac = await runEncoderWorker(
+            () =>
+              new Worker(new URL('../workers/flac.worker.ts', import.meta.url), { type: 'module' }),
+            req,
+            pcm.map((c) => c.buffer),
+            { signal, onProgress },
+          )
+        } else {
+          if (signal?.aborted) throw new DOMException('Abgebrochen.', 'AbortError')
+          flac = encodeFlac(pcm, sampleRate, { onProgress })
+        }
+        return result(flac)
+      }
+      case 'aac':
+      case 'webm': {
+        const data = await encodeWithWebCodecs(channels, sampleRate, format, options.mp3Bitrate, {
+          signal,
+          onProgress,
+        })
+        return result(data)
+      }
+      case 'ogg':
+        throw new Error('formatNotInBrowser')
+      default: {
+        const unreachable: never = format
+        throw new Error(`Unbekanntes Format: ${String(unreachable)}`)
+      }
     }
   }
 

@@ -4,13 +4,18 @@ Millisekunden-genauer Audio-Schneider als Vue-3-SPA für `kodinitools.com/audio-
 Zwei Verarbeitungsmodi:
 
 - **Browser (Default, Privacy First):** Web Audio API dekodiert die Datei, es wird
-  **sample-genau** geschnitten (bei 44,1 kHz ≈ 0,023 ms pro Sample) und lokal als
-  WAV (verlustfrei) oder MP3 (via `lamejs`) exportiert. **Kein Upload.**
-  Das MP3-Encoding läuft in einem **Web Worker** (Main-Thread bleibt frei),
-  mit echtem Fortschritt und Abbruch.
+  **sample-genau** geschnitten (bei 44,1 kHz ≈ 0,023 ms pro Sample) und lokal
+  exportiert. **Kein Upload.**
+  - **WAV** (verlustfrei), **MP3** (`lamejs`) und **FLAC** (eigener verlustfreier
+    Encoder, `utils/flacEncoder.ts`) – immer verfügbar. MP3 und FLAC laufen in
+    einem **Web Worker** (Main-Thread bleibt frei), mit Fortschritt und Abbruch.
+  - **AAC (M4A)** und **Opus (WebM)** über die **WebCodecs-API**, Container via
+    `mediabunny` (wird erst beim Export nachgeladen). Beim Start prüft die App per
+    `AudioEncoder.isConfigSupported`, welche Codecs der Browser kann, und bietet nur
+    diese an (z. B. Chromium ohne proprietäre Codecs: kein AAC).
 - **Server (optional):** Der (bereits geschnittene) Puffer wird als WAV an ein
-  Node/Express-Backend hochgeladen, das mit **FFmpeg** in erweiterte Formate
-  (OGG/AAC/WebM/FLAC) transkodiert. Für Formate jenseits von WAV/MP3.
+  Node/Express-Backend hochgeladen, das mit **FFmpeg** transkodiert. Nötig für
+  **OGG (Vorbis)** sowie für AAC/Opus in Browsern ohne passenden WebCodecs-Encoder.
 
 **Kumulatives Schneiden:** Jeder Schnitt wendet die gewählte Aktion
 (behalten/entfernen + Fades) auf den **aktuell bearbeiteten Puffer** an – nicht auf
@@ -34,10 +39,14 @@ src/utils/sliceBuffer.ts   sample-genaues Schneiden + lineare Fades          (pu
 src/utils/wavEncoder.ts    16-bit-PCM-WAV-Encoder                            (pure)
 src/utils/waveform.ts      Min/Max-Peaks pro Pixel                           (pure)
 src/utils/mp3Encoder.ts    MP3-Block-Encoding, Encoder injizierbar           (pure)
+src/utils/flacEncoder.ts   FLAC-Encoder (16 bit, fixe Prädiktoren, Rice)     (pure)
 src/composables/useAudioEngine.ts   decode/encode/toWav (Web Audio + lamejs)  (Browser)
 src/composables/useMp3Worker.ts     Worker-Wrapper (Promise/Progress/Abort)  (Browser)
+src/composables/useEncoderWorker.ts gemeinsamer Ablauf für MP3-/FLAC-Worker   (Browser)
+src/composables/useWebCodecsEncoder.ts  AAC/Opus via WebCodecs + mediabunny  (Browser)
 src/composables/useWaveform.ts      Canvas-Rendering                         (Browser)
 src/workers/mp3.worker.ts  lamejs-Encoding im Worker-Thread
+src/workers/flac.worker.ts FLAC-Encoding im Worker-Thread
 src/services/api.ts        Server-Modus-Client (XHR: Progress/Abort/Timeout)
 src/stores/audioCutter.ts  Pinia single source of truth
 src/i18n/                  vue-i18n-Setup + Kataloge (de.ts, en.ts)

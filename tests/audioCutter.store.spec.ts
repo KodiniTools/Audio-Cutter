@@ -271,4 +271,36 @@ describe('audioCutter store · Undo/Redo', () => {
     s.setDecoded(meta, decoded, null)
     expect(s.canUndo).toBe(false)
   })
+
+  describe('Formatwahl beim Wechsel in den Browser-Modus', () => {
+    it('behält FLAC (eingebauter Encoder)', () => {
+      const s = useAudioCutterStore()
+      s.setMode('server')
+      s.patchExportOptions({ format: 'flac' })
+      s.setMode('browser')
+      expect(s.exportOptions.format).toBe('flac')
+    })
+
+    it('fällt bei OGG auf WAV zurück', () => {
+      const s = useAudioCutterStore()
+      s.setMode('server')
+      s.patchExportOptions({ format: 'ogg' })
+      s.setMode('browser')
+      expect(s.exportOptions.format).toBe('wav')
+    })
+
+    it('behält AAC nur, wenn WebCodecs es unterstützt', () => {
+      const s = useAudioCutterStore()
+      s.setMode('server')
+      s.patchExportOptions({ format: 'aac' })
+      s.setMode('browser')
+      expect(s.exportOptions.format).toBe('wav')
+
+      s.setWebCodecsFormats(['aac'])
+      s.setMode('server')
+      s.patchExportOptions({ format: 'aac' })
+      s.setMode('browser')
+      expect(s.exportOptions.format).toBe('aac')
+    })
+  })
 })
