@@ -4,7 +4,7 @@
 // verfügbar ist. Einzige Quelle für Client (Dropdown, Download-Name/MIME) und
 // als Referenz für die Server-Codec-Zuordnung.
 
-import type { ExportFormat, ProcessingMode } from '../types/audio'
+import type { ExportFormat, ProcessingMode, WavBitDepth } from '../types/audio'
 
 /**
  * Verfügbarkeit im Browser-Modus:
@@ -67,3 +67,10 @@ export function formatsForMode(
 ): ExportFormat[] {
   return ALL_FORMATS.filter((f) => mode === 'server' || isBrowserFormat(f, webCodecsFormats))
 }
+
+/** WAV-Bittiefen in Anzeige-Reihenfolge (Labels sprachneutral). */
+export const WAV_BIT_DEPTHS: { value: WavBitDepth; label: string }[] = [
+  { value: 'pcm16', label: '16 bit PCM' },
+  { value: 'pcm24', label: '24 bit PCM' },
+  { value: 'float32', label: '32 bit Float' },
+]

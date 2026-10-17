@@ -6,6 +6,8 @@ export type ProcessingMode = 'browser' | 'server'
 // liefert ausschliesslich der Server-Modus (FFmpeg). Siehe utils/formats.ts.
 export type ExportFormat = 'wav' | 'mp3' | 'ogg' | 'aac' | 'webm' | 'flac'
 export type Status = 'idle' | 'decoding' | 'processing' | 'done' | 'error'
+/** WAV-Bittiefe: 16/24 bit PCM oder 32 bit Float (nur Browser-Modus). */
+export type WavBitDepth = 'pcm16' | 'pcm24' | 'float32'
 /** 'keep' = Auswahl behalten (Standard), 'remove' = Auswahl aus dem Track entfernen. */
 export type CutMode = 'keep' | 'remove'
 
@@ -37,6 +39,8 @@ export interface ExportOptions {
   format: ExportFormat
   /** Ziel-Bitrate (kbps) für verlustbehaftete Formate (MP3, OGG, AAC, WebM). */
   mp3Bitrate: number
+  /** Bittiefe für WAV-Export im Browser-Modus. */
+  wavBitDepth: WavBitDepth
   fadeInMs: number
   fadeOutMs: number
   /** Auswahl behalten oder aus dem Track entfernen. */

@@ -3,8 +3,8 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useAudioCutterStore } from '../stores/audioCutter'
-import type { CutMode, ExportFormat, ProcessingMode } from '../types/audio'
-import { FORMAT_META, formatsForMode } from '../utils/formats'
+import type { CutMode, ExportFormat, ProcessingMode, WavBitDepth } from '../types/audio'
+import { FORMAT_META, WAV_BIT_DEPTHS, formatsForMode } from '../utils/formats'
 
 const { t } = useI18n({ useScope: 'global' })
 const store = useAudioCutterStore()
@@ -47,6 +47,11 @@ const formats = computed<ExportFormat[]>(() =>
 const formatLabel = (f: ExportFormat): string => FORMAT_META[f].label
 // Bitrate nur für verlustbehaftete Formate anzeigen (MP3, OGG, AAC, WebM).
 const showBitrate = computed(() => FORMAT_META[exportOptions.value.format].lossy)
+// Bittiefe nur für WAV im Browser-Modus (der Server liefert WAV stets in 16 bit).
+const showBitDepth = computed(() => exportOptions.value.format === 'wav' && mode.value === 'browser')
+function setBitDepth(d: WavBitDepth): void {
+  store.patchExportOptions({ wavBitDepth: d })
+}
 </script>
 
 <template>
@@ -152,6 +157,19 @@ const showBitrate = computed(() => FORMAT_META[exportOptions.value.format].lossy
           @change="setFormat(($event.target as HTMLSelectElement).value as ExportFormat)"
         >
           <option v-for="f in formats" :key="f" :value="f">{{ formatLabel(f) }}</option>
+        </select>
+      </div>
+
+      <!-- Bittiefe (nur WAV im Browser-Modus) -->
+      <div v-if="showBitDepth" class="field-row">
+        <label for="ac-bit-depth">{{ t('export.bitDepth') }}</label>
+        <select
+          id="ac-bit-depth"
+          class="field-select"
+          :value="exportOptions.wavBitDepth"
+          @change="setBitDepth(($event.target as HTMLSelectElement).value as WavBitDepth)"
+        >
+          <option v-for="d in WAV_BIT_DEPTHS" :key="d.value" :value="d.value">{{ d.label }}</option>
         </select>
       </div>
 

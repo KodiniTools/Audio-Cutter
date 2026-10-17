@@ -106,6 +106,7 @@ const en: MessageSchema = {
     },
     format: 'Format',
     bitrate: 'Bitrate: {value} kbps',
+    bitDepth: 'Bit depth',
     fadeIn: 'Fade-in (ms)',
     fadeOut: 'Fade-out (ms)',
     cut: 'Cut',
