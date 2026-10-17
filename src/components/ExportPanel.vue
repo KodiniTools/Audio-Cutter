@@ -8,8 +8,17 @@ import { FORMAT_META, formatsForMode } from '../utils/formats'
 
 const { t } = useI18n({ useScope: 'global' })
 const store = useAudioCutterStore()
-const { mode, exportOptions, error, result, busy, canCut, canExport, hasEdits } =
-  storeToRefs(store)
+const {
+  mode,
+  exportOptions,
+  error,
+  result,
+  busy,
+  canCut,
+  canExport,
+  hasEdits,
+  webCodecsFormats,
+} = storeToRefs(store)
 
 const emit = defineEmits<{
   (e: 'cut'): void
@@ -31,8 +40,10 @@ function setCutMode(m: CutMode): void {
 
 const modes: ProcessingMode[] = ['browser', 'server']
 const cutModes: CutMode[] = ['keep', 'remove']
-// Im Browser-Modus nur WAV/MP3, im Server-Modus alle Formate.
-const formats = computed<ExportFormat[]>(() => formatsForMode(mode.value))
+// Browser-Modus: eingebaute Encoder + per WebCodecs erkannte Formate; Server: alle.
+const formats = computed<ExportFormat[]>(() =>
+  formatsForMode(mode.value, webCodecsFormats.value),
+)
 const formatLabel = (f: ExportFormat): string => FORMAT_META[f].label
 // Bitrate nur für verlustbehaftete Formate anzeigen (MP3, OGG, AAC, WebM).
 const showBitrate = computed(() => FORMAT_META[exportOptions.value.format].lossy)

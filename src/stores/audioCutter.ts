@@ -15,13 +15,14 @@ import type {
   CutRegion,
   CutResult,
   DecodedAudio,
+  ExportFormat,
   ExportOptions,
   ProcessingMode,
   Status,
 } from '../types/audio'
 import { clamp, msToSamples, samplesToMs, validateRegion } from '../utils/audioMath'
 import { cutChannels } from '../utils/sliceBuffer'
-import { FORMAT_META } from '../utils/formats'
+import { isBrowserFormat } from '../utils/formats'
 
 /**
  * Ein Undo/Redo-Schnappschuss des editierbaren Zustands – inklusive des
@@ -59,6 +60,8 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
   const result = ref<CutResult | null>(null)
   /** Original-Datei für Server-Modus (Upload). */
   const sourceFile = shallowRef<File | null>(null)
+  /** Per Feature-Erkennung ermittelte WebCodecs-Formate (Browser-Modus, z. B. AAC/Opus). */
+  const webCodecsFormats = ref<ExportFormat[]>([])
 
   // --- Undo/Redo-Historie ---
   // Erfasst den editierbaren Zustand (Puffer, Auswahl, Export-Optionen, Modus).
@@ -214,15 +217,21 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
   }
 
   function setMode(m: ProcessingMode): void {
-    // Server-only-Format (z. B. OGG/AAC/WebM/FLAC) im Browser-Modus nicht
-    // zulassen -> auf WAV zurückfallen.
-    const needsFormatReset = m === 'browser' && !FORMAT_META[exportOptions.value.format].browser
+    // Im Browser nicht kodierbares Format (z. B. OGG, oder AAC ohne WebCodecs)
+    // nicht zulassen -> auf WAV zurückfallen.
+    const needsFormatReset =
+      m === 'browser' && !isBrowserFormat(exportOptions.value.format, webCodecsFormats.value)
     if (m === mode.value && !needsFormatReset) return
     record('mode')
     mode.value = m
     if (needsFormatReset) {
       exportOptions.value = { ...exportOptions.value, format: 'wav' }
     }
+  }
+
+  /** Ergebnis der WebCodecs-Feature-Erkennung übernehmen (kein Undo-Schritt). */
+  function setWebCodecsFormats(formats: ExportFormat[]): void {
+    webCodecsFormats.value = [...formats]
   }
 
   function patchExportOptions(patch: Partial<ExportOptions>): void {
@@ -332,6 +341,7 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
     error,
     result,
     sourceFile,
+    webCodecsFormats,
     // getters
     durationMs,
     hasAudio,
@@ -350,6 +360,7 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
     setEnd,
     setRegion,
     setMode,
+    setWebCodecsFormats,
     patchExportOptions,
     applyCut,
     setStatus,

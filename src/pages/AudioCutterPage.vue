@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useAudioCutterStore } from '../stores/audioCutter'
 import { useAudioEngine, type RegionPlayer } from '../composables/useAudioEngine'
+import { detectWebCodecsFormats } from '../composables/useWebCodecsEncoder'
 import { cutOnServer } from '../services/api'
 import { formatMs } from '../utils/audioMath'
 import { FORMAT_META } from '../utils/formats'
@@ -532,6 +533,8 @@ function onEditorDrop(e: DragEvent): void {
 onMounted(() => {
   window.addEventListener('keydown', onKeydown)
   window.addEventListener('paste', onPaste)
+  // Einmalig prüfen, welche Formate (AAC/Opus) der Browser selbst kodieren kann.
+  void detectWebCodecsFormats().then((formats) => store.setWebCodecsFormats(formats))
 })
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
