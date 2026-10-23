@@ -116,10 +116,13 @@ export default {
     cancel: 'Abbrechen',
     download: '{name} herunterladen',
     delete: 'Löschen',
-    sendToConverter: 'An Audiokonverter senden',
-    sendingToConverter: 'Wird übergeben …',
-    sendToConverterHintResult: 'Übergibt die exportierte Datei an den Audiokonverter (neuer Tab).',
-    sendToConverterHintWav: 'Ohne Export wird der Ausschnitt verlustfrei als WAV übergeben (neuer Tab).',
+    sendTo: {
+      converter: 'An Audiokonverter senden',
+      normalizer: 'An Normalisierer senden',
+    },
+    sendingTo: 'Wird übergeben …',
+    sendToHintResult: 'Übergibt die exportierte Datei an das gewählte Tool (neuer Tab).',
+    sendToHintWav: 'Ohne Export wird der Ausschnitt verlustfrei als WAV übergeben (neuer Tab).',
     modes: {
       browser: { label: 'Browser', hint: 'lokal · privat' },
       server: { label: 'Server', hint: 'große Dateien · FFmpeg' },
@@ -146,6 +149,6 @@ export default {
     loadUnknown: 'Unbekannter Fehler beim Laden.',
     processFailed: 'Verarbeitung fehlgeschlagen.',
     popupBlocked: 'Neuer Tab wurde blockiert – bitte Pop-ups für diese Seite erlauben.',
-    shareFailed: 'Übergabe an den Audiokonverter fehlgeschlagen.',
+    shareFailed: 'Übergabe an das Tool fehlgeschlagen.',
   },
 }

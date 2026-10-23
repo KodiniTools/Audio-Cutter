@@ -6,7 +6,7 @@ import { useAudioCutterStore } from '../stores/audioCutter'
 import { useAudioEngine, type RegionPlayer } from '../composables/useAudioEngine'
 import { detectWebCodecsFormats } from '../composables/useWebCodecsEncoder'
 import { cutOnServer } from '../services/api'
-import { audioConverterUrl, shareFiles } from '../services/sharedFiles'
+import { shareFiles, shareTargetUrl, type ShareTarget } from '../services/sharedFiles'
 import { formatMs } from '../utils/audioMath'
 import { FORMAT_META } from '../utils/formats'
 import FileDropzone from '../components/FileDropzone.vue'
@@ -289,16 +289,16 @@ async function onDownload(): Promise<void> {
   discardResult()
 }
 
-/** true, solange die Übergabe an den Audiokonverter vorbereitet wird. */
-const sendingToConverter = ref(false)
+/** Ziel-Tool, dessen Übergabe gerade vorbereitet wird (sonst null). */
+const sendingTo = ref<ShareTarget | null>(null)
 
 /**
- * Übergibt den bearbeiteten Ausschnitt an den Audiokonverter (neuer Tab).
+ * Übergibt den bearbeiteten Ausschnitt an Audiokonverter oder Normalisierer (neuer Tab).
  * Gesendet wird das vorhandene Export-Ergebnis; ohne Export ein verlustfreies
  * WAV des aktuellen Puffers (gewählte Bittiefe). Das Ergebnis bleibt erhalten.
  */
-async function onSendToConverter(): Promise<void> {
-  if (!decoded.value || !meta.value || !store.hasEdits || sendingToConverter.value) return
+async function onSendTo(target: ShareTarget): Promise<void> {
+  if (!decoded.value || !meta.value || !store.hasEdits || sendingTo.value) return
   // Tab synchron im Klick öffnen – nach dem async Speichern würde ein
   // Popup-Blocker window.open sonst verhindern.
   const win = window.open('about:blank', '_blank')
@@ -307,7 +307,7 @@ async function onSendToConverter(): Promise<void> {
     return
   }
   win.opener = null
-  sendingToConverter.value = true
+  sendingTo.value = target
   store.setError(null)
   try {
     let file = store.result
@@ -322,12 +322,12 @@ async function onSendToConverter(): Promise<void> {
       file = { name: wav.filename, blob: wav.blob }
     }
     await shareFiles([file])
-    win.location.href = audioConverterUrl()
+    win.location.href = shareTargetUrl(target)
   } catch (e) {
     win.close()
     store.setError(toMessage(e, 'errors.shareFailed'))
   } finally {
-    sendingToConverter.value = false
+    sendingTo.value = null
   }
 }
 
@@ -617,13 +617,13 @@ onBeforeUnmount(() => {
         </section>
 
         <ExportPanel
-          :sending-to-converter="sendingToConverter"
+          :sending-to="sendingTo"
           @cut="onCut"
           @export="onExport"
           @cancel="onCancel"
           @download="onDownload"
           @delete="onDelete"
-          @send-to-converter="onSendToConverter"
+          @send-to="onSendTo"
         />
 
         <div class="sidebar-footer">

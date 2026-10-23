@@ -116,10 +116,13 @@ const en: MessageSchema = {
     cancel: 'Cancel',
     download: 'Download {name}',
     delete: 'Delete',
-    sendToConverter: 'Send to Audio Converter',
-    sendingToConverter: 'Handing over …',
-    sendToConverterHintResult: 'Hands the exported file to the Audio Converter (new tab).',
-    sendToConverterHintWav: 'Without an export, the clip is handed over losslessly as WAV (new tab).',
+    sendTo: {
+      converter: 'Send to Audio Converter',
+      normalizer: 'Send to Normalizer',
+    },
+    sendingTo: 'Handing over …',
+    sendToHintResult: 'Hands the exported file to the selected tool (new tab).',
+    sendToHintWav: 'Without an export, the clip is handed over losslessly as WAV (new tab).',
     modes: {
       browser: { label: 'Browser', hint: 'local · private' },
       server: { label: 'Server', hint: 'large files · FFmpeg' },
@@ -146,7 +149,7 @@ const en: MessageSchema = {
     loadUnknown: 'Unknown error while loading.',
     processFailed: 'Processing failed.',
     popupBlocked: 'The new tab was blocked – please allow pop-ups for this site.',
-    shareFailed: 'Handing over to the Audio Converter failed.',
+    shareFailed: 'Handing over to the tool failed.',
   },
 }
 

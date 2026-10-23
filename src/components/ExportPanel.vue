@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useAudioCutterStore } from '../stores/audioCutter'
 import type { CutMode, ExportFormat, ProcessingMode, WavBitDepth } from '../types/audio'
 import { FORMAT_META, WAV_BIT_DEPTHS, formatsForMode } from '../utils/formats'
+import { SHARE_TARGETS, type ShareTarget } from '../services/sharedFiles'
 
 const { t } = useI18n({ useScope: 'global' })
 const store = useAudioCutterStore()
@@ -26,9 +27,9 @@ const emit = defineEmits<{
   (e: 'cancel'): void
   (e: 'download'): void
   (e: 'delete'): void
-  (e: 'sendToConverter'): void
+  (e: 'sendTo', target: ShareTarget): void
 }>()
-defineProps<{ sendingToConverter?: boolean }>()
+defineProps<{ sendingTo?: ShareTarget | null }>()
 
 function setMode(m: ProcessingMode): void {
   store.setMode(m)
@@ -227,23 +228,25 @@ function setBitDepth(d: WavBitDepth): void {
         </template>
       </div>
 
-      <!-- Weitergabe an den Audiokonverter (Ergebnis bzw. WAV des Puffers) -->
+      <!-- Weitergabe an andere Tools (Ergebnis bzw. WAV des Puffers) -->
       <div v-if="hasEdits" class="export-buttons">
         <button
+          v-for="target in SHARE_TARGETS"
+          :key="target"
           class="export-btn"
-          :disabled="busy || sendingToConverter"
-          @click="emit('sendToConverter')"
+          :disabled="busy || !!sendingTo"
+          @click="emit('sendTo', target)"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M14 3h7v7" />
             <path d="M10 14 21 3" />
             <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />
           </svg>
-          <span>{{ sendingToConverter ? t('export.sendingToConverter') : t('export.sendToConverter') }}</span>
+          <span>{{ sendingTo === target ? t('export.sendingTo') : t(`export.sendTo.${target}`) }}</span>
         </button>
       </div>
       <p v-if="hasEdits && !busy" class="sidebar-hint text-xs">
-        {{ result ? t('export.sendToConverterHintResult') : t('export.sendToConverterHintWav') }}
+        {{ result ? t('export.sendToHintResult') : t('export.sendToHintWav') }}
       </p>
 
       <p v-if="!hasEdits && !busy" class="sidebar-hint text-xs">{{ t('export.noEdits') }}</p>
