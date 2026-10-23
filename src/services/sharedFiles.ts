@@ -1,6 +1,6 @@
 // src/services/sharedFiles.ts
 // Übergabe von Dateien an andere KodiniTools (gleiche Origin kodinitools.com).
-// Protokoll identisch zum Audiokonverter (src/services/SharedFileRepository.ts):
+// Protokoll identisch zu Audiokonverter und Audio-Normalisierer:
 // IndexedDB "kodinitools-shared-files", Store "audio-files"; das Ziel-Tool wird
 // mit "?source=<tool>" geöffnet und liest die Einträge beim Start aus.
 
@@ -61,9 +61,16 @@ export async function shareFiles(files: SharedFileInput[]): Promise<void> {
   })
 }
 
-/** URL des Audiokonverters inkl. Quellkennung (Default: gleiche Origin). */
-export function audioConverterUrl(): string {
+/** Ziel-Tools, an die ein Ausschnitt übergeben werden kann. */
+export type ShareTarget = 'converter' | 'normalizer'
+export const SHARE_TARGETS: readonly ShareTarget[] = ['converter', 'normalizer']
+
+/** URL des Ziel-Tools inkl. Quellkennung (Default: gleiche Origin). */
+export function shareTargetUrl(target: ShareTarget): string {
   const env = (import.meta as unknown as { env?: Record<string, string> }).env
-  const base = env?.VITE_AUDIOKONVERTER_URL || '/audiokonverter/'
+  const base =
+    target === 'converter'
+      ? env?.VITE_AUDIOKONVERTER_URL || '/audiokonverter/'
+      : env?.VITE_AUDIONORMALISIERER_URL || '/audionormalisierer/app'
   return `${base}?source=${SHARE_SOURCE}`
 }
