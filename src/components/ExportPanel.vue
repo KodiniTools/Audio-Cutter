@@ -26,7 +26,9 @@ const emit = defineEmits<{
   (e: 'cancel'): void
   (e: 'download'): void
   (e: 'delete'): void
+  (e: 'sendToConverter'): void
 }>()
+defineProps<{ sendingToConverter?: boolean }>()
 
 function setMode(m: ProcessingMode): void {
   store.setMode(m)
@@ -224,6 +226,25 @@ function setBitDepth(d: WavBitDepth): void {
           </button>
         </template>
       </div>
+
+      <!-- Weitergabe an den Audiokonverter (Ergebnis bzw. WAV des Puffers) -->
+      <div v-if="hasEdits" class="export-buttons">
+        <button
+          class="export-btn"
+          :disabled="busy || sendingToConverter"
+          @click="emit('sendToConverter')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 3h7v7" />
+            <path d="M10 14 21 3" />
+            <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />
+          </svg>
+          <span>{{ sendingToConverter ? t('export.sendingToConverter') : t('export.sendToConverter') }}</span>
+        </button>
+      </div>
+      <p v-if="hasEdits && !busy" class="sidebar-hint text-xs">
+        {{ result ? t('export.sendToConverterHintResult') : t('export.sendToConverterHintWav') }}
+      </p>
 
       <p v-if="!hasEdits && !busy" class="sidebar-hint text-xs">{{ t('export.noEdits') }}</p>
       <p v-if="error" class="text-sm font-medium text-danger">{{ error }}</p>
