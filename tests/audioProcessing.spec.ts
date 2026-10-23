@@ -148,6 +148,35 @@ describe('encodeWav', () => {
     const sample = view.getInt16(44, true)
     expect(sample).toBeCloseTo(0.5 * 0x7fff, -1)
   })
+  it('24 bit PCM: Header, Größe und Werte (Little Endian, Vorzeichen)', () => {
+    const buf = encodeWav([new Float32Array([0.5, -1, 1]), new Float32Array([-0.25, 0, 0])], 48000, 'pcm24')
+    const view = new DataView(buf)
+    expect(view.getUint16(20, true)).toBe(1) // PCM
+    expect(view.getUint16(32, true)).toBe(6) // blockAlign = 2 ch * 3 Byte
+    expect(view.getUint16(34, true)).toBe(24)
+    expect(view.getUint32(40, true)).toBe(3 * 6)
+    expect(buf.byteLength).toBe(44 + 18)
+    const s24 = (o: number) => (view.getUint8(o) | (view.getUint8(o + 1) << 8) | (view.getInt8(o + 2) << 16))
+    expect(s24(44)).toBe(Math.round(0.5 * 0x7fffff)) // L0
+    expect(s24(47)).toBe(Math.round(-0.25 * 0x800000)) // R0
+    expect(s24(50)).toBe(-0x800000) // L1 = -1
+    expect(s24(56)).toBe(0x7fffff) // L2 = +1
+  })
+  it('32 bit Float: Format-Tag 3, fact-Chunk, Werte ungeklippt', () => {
+    const buf = encodeWav([new Float32Array([0.5, 1.5, -0.125])], 44100, 'float32')
+    const view = new DataView(buf)
+    const tag = (o: number) => String.fromCharCode(view.getUint8(o), view.getUint8(o + 1), view.getUint8(o + 2), view.getUint8(o + 3))
+    expect(view.getUint32(16, true)).toBe(18) // fmt mit cbSize
+    expect(view.getUint16(20, true)).toBe(3) // IEEE Float
+    expect(view.getUint16(34, true)).toBe(32)
+    expect(view.getUint16(36, true)).toBe(0) // cbSize
+    expect(tag(38)).toBe('fact')
+    expect(view.getUint32(46, true)).toBe(3) // Frames
+    expect(tag(50)).toBe('data')
+    expect(view.getUint32(54, true)).toBe(12)
+    expect(view.getUint32(4, true)).toBe(buf.byteLength - 8)
+    expect([view.getFloat32(58, true), view.getFloat32(62, true), view.getFloat32(66, true)]).toEqual([0.5, 1.5, -0.125])
+  })
 })
 
 describe('computePeaks', () => {

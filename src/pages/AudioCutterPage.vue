@@ -6,6 +6,7 @@ import { useAudioCutterStore } from '../stores/audioCutter'
 import { useAudioEngine, type RegionPlayer } from '../composables/useAudioEngine'
 import { detectWebCodecsFormats } from '../composables/useWebCodecsEncoder'
 import { cutOnServer } from '../services/api'
+import { audioConverterUrl, shareFiles } from '../services/sharedFiles'
 import { formatMs } from '../utils/audioMath'
 import { FORMAT_META } from '../utils/formats'
 import FileDropzone from '../components/FileDropzone.vue'
@@ -286,6 +287,48 @@ async function onDownload(): Promise<void> {
   // Fallback (Firefox/Safari): klassischer Download-Anchor.
   fallbackDownload(r.blob, r.filename)
   discardResult()
+}
+
+/** true, solange die Übergabe an den Audiokonverter vorbereitet wird. */
+const sendingToConverter = ref(false)
+
+/**
+ * Übergibt den bearbeiteten Ausschnitt an den Audiokonverter (neuer Tab).
+ * Gesendet wird das vorhandene Export-Ergebnis; ohne Export ein verlustfreies
+ * WAV des aktuellen Puffers (gewählte Bittiefe). Das Ergebnis bleibt erhalten.
+ */
+async function onSendToConverter(): Promise<void> {
+  if (!decoded.value || !meta.value || !store.hasEdits || sendingToConverter.value) return
+  // Tab synchron im Klick öffnen – nach dem async Speichern würde ein
+  // Popup-Blocker window.open sonst verhindern.
+  const win = window.open('about:blank', '_blank')
+  if (!win) {
+    store.setError(t('errors.popupBlocked'))
+    return
+  }
+  win.opener = null
+  sendingToConverter.value = true
+  store.setError(null)
+  try {
+    let file = store.result
+      ? { name: store.result.filename, blob: store.result.blob }
+      : null
+    if (!file) {
+      const wav = await engine.encode(
+        decoded.value,
+        { ...exportOptions.value, format: 'wav' },
+        meta.value.name,
+      )
+      file = { name: wav.filename, blob: wav.blob }
+    }
+    await shareFiles([file])
+    win.location.href = audioConverterUrl()
+  } catch (e) {
+    win.close()
+    store.setError(toMessage(e, 'errors.shareFailed'))
+  } finally {
+    sendingToConverter.value = false
+  }
 }
 
 function fallbackDownload(blob: Blob, filename: string): void {
@@ -574,11 +617,13 @@ onBeforeUnmount(() => {
         </section>
 
         <ExportPanel
+          :sending-to-converter="sendingToConverter"
           @cut="onCut"
           @export="onExport"
           @cancel="onCancel"
           @download="onDownload"
           @delete="onDelete"
+          @send-to-converter="onSendToConverter"
         />
 
         <div class="sidebar-footer">

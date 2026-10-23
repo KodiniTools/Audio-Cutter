@@ -106,6 +106,7 @@ export default {
     },
     format: 'Format',
     bitrate: 'Bitrate: {value} kbps',
+    bitDepth: 'Bittiefe',
     fadeIn: 'Fade-In (ms)',
     fadeOut: 'Fade-Out (ms)',
     cut: 'Schneiden',
@@ -115,6 +116,10 @@ export default {
     cancel: 'Abbrechen',
     download: '{name} herunterladen',
     delete: 'Löschen',
+    sendToConverter: 'An Audiokonverter senden',
+    sendingToConverter: 'Wird übergeben …',
+    sendToConverterHintResult: 'Übergibt die exportierte Datei an den Audiokonverter (neuer Tab).',
+    sendToConverterHintWav: 'Ohne Export wird der Ausschnitt verlustfrei als WAV übergeben (neuer Tab).',
     modes: {
       browser: { label: 'Browser', hint: 'lokal · privat' },
       server: { label: 'Server', hint: 'große Dateien · FFmpeg' },
@@ -140,5 +145,7 @@ export default {
     noDecodedData: 'Keine dekodierten Daten vorhanden.',
     loadUnknown: 'Unbekannter Fehler beim Laden.',
     processFailed: 'Verarbeitung fehlgeschlagen.',
+    popupBlocked: 'Neuer Tab wurde blockiert – bitte Pop-ups für diese Seite erlauben.',
+    shareFailed: 'Übergabe an den Audiokonverter fehlgeschlagen.',
   },
 }

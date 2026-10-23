@@ -3,8 +3,8 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useAudioCutterStore } from '../stores/audioCutter'
-import type { CutMode, ExportFormat, ProcessingMode } from '../types/audio'
-import { FORMAT_META, formatsForMode } from '../utils/formats'
+import type { CutMode, ExportFormat, ProcessingMode, WavBitDepth } from '../types/audio'
+import { FORMAT_META, WAV_BIT_DEPTHS, formatsForMode } from '../utils/formats'
 
 const { t } = useI18n({ useScope: 'global' })
 const store = useAudioCutterStore()
@@ -26,7 +26,9 @@ const emit = defineEmits<{
   (e: 'cancel'): void
   (e: 'download'): void
   (e: 'delete'): void
+  (e: 'sendToConverter'): void
 }>()
+defineProps<{ sendingToConverter?: boolean }>()
 
 function setMode(m: ProcessingMode): void {
   store.setMode(m)
@@ -47,6 +49,11 @@ const formats = computed<ExportFormat[]>(() =>
 const formatLabel = (f: ExportFormat): string => FORMAT_META[f].label
 // Bitrate nur für verlustbehaftete Formate anzeigen (MP3, OGG, AAC, WebM).
 const showBitrate = computed(() => FORMAT_META[exportOptions.value.format].lossy)
+// Bittiefe nur für WAV im Browser-Modus (der Server liefert WAV stets in 16 bit).
+const showBitDepth = computed(() => exportOptions.value.format === 'wav' && mode.value === 'browser')
+function setBitDepth(d: WavBitDepth): void {
+  store.patchExportOptions({ wavBitDepth: d })
+}
 </script>
 
 <template>
@@ -155,6 +162,19 @@ const showBitrate = computed(() => FORMAT_META[exportOptions.value.format].lossy
         </select>
       </div>
 
+      <!-- Bittiefe (nur WAV im Browser-Modus) -->
+      <div v-if="showBitDepth" class="field-row">
+        <label for="ac-bit-depth">{{ t('export.bitDepth') }}</label>
+        <select
+          id="ac-bit-depth"
+          class="field-select"
+          :value="exportOptions.wavBitDepth"
+          @change="setBitDepth(($event.target as HTMLSelectElement).value as WavBitDepth)"
+        >
+          <option v-for="d in WAV_BIT_DEPTHS" :key="d.value" :value="d.value">{{ d.label }}</option>
+        </select>
+      </div>
+
       <!-- Bitrate (nur verlustbehaftete Formate) -->
       <div v-if="showBitrate" class="flex flex-col gap-1">
         <label for="ac-bitrate" class="caps-label">{{
@@ -206,6 +226,25 @@ const showBitrate = computed(() => FORMAT_META[exportOptions.value.format].lossy
           </button>
         </template>
       </div>
+
+      <!-- Weitergabe an den Audiokonverter (Ergebnis bzw. WAV des Puffers) -->
+      <div v-if="hasEdits" class="export-buttons">
+        <button
+          class="export-btn"
+          :disabled="busy || sendingToConverter"
+          @click="emit('sendToConverter')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 3h7v7" />
+            <path d="M10 14 21 3" />
+            <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />
+          </svg>
+          <span>{{ sendingToConverter ? t('export.sendingToConverter') : t('export.sendToConverter') }}</span>
+        </button>
+      </div>
+      <p v-if="hasEdits && !busy" class="sidebar-hint text-xs">
+        {{ result ? t('export.sendToConverterHintResult') : t('export.sendToConverterHintWav') }}
+      </p>
 
       <p v-if="!hasEdits && !busy" class="sidebar-hint text-xs">{{ t('export.noEdits') }}</p>
       <p v-if="error" class="text-sm font-medium text-danger">{{ error }}</p>
