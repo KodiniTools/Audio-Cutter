@@ -10,6 +10,10 @@ describe('shareTargetUrl', () => {
     expect(shareTargetUrl('normalizer')).toBe('/audionormalisierer/app?source=audio-cutter')
   })
 
+  it('öffnet den Equalizer 19 direkt in der App', () => {
+    expect(shareTargetUrl('equalizer')).toBe('/equaliser19/app?source=audio-cutter')
+  })
+
   it('hat für jedes Ziel eine URL', () => {
     for (const target of SHARE_TARGETS) expect(shareTargetUrl(target)).toContain('?source=audio-cutter')
   })

@@ -119,6 +119,7 @@ export default {
     sendTo: {
       converter: 'An Audiokonverter senden',
       normalizer: 'An Normalisierer senden',
+      equalizer: 'An Equalizer 19 senden',
     },
     sendingTo: 'Wird übergeben …',
     sendToHintResult: 'Übergibt die exportierte Datei an das gewählte Tool (neuer Tab).',
