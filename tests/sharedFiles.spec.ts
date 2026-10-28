@@ -14,6 +14,10 @@ describe('shareTargetUrl', () => {
     expect(shareTargetUrl('equalizer')).toBe('/equaliser19/app?source=audio-cutter')
   })
 
+  it('öffnet den Playlist-Generator direkt in der App', () => {
+    expect(shareTargetUrl('playlist')).toBe('/playlist_generator/app?source=audio-cutter')
+  })
+
   it('hat für jedes Ziel eine URL', () => {
     for (const target of SHARE_TARGETS) expect(shareTargetUrl(target)).toContain('?source=audio-cutter')
   })

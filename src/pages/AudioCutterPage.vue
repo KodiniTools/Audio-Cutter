@@ -293,7 +293,7 @@ async function onDownload(): Promise<void> {
 const sendingTo = ref<ShareTarget | null>(null)
 
 /**
- * Übergibt den bearbeiteten Ausschnitt an Audiokonverter oder Normalisierer (neuer Tab).
+ * Übergibt den bearbeiteten Ausschnitt an ein anderes Tool (SHARE_TARGETS, neuer Tab).
  * Gesendet wird das vorhandene Export-Ergebnis; ohne Export ein verlustfreies
  * WAV des aktuellen Puffers (gewählte Bittiefe). Das Ergebnis bleibt erhalten.
  */
