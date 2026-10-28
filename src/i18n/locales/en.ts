@@ -120,6 +120,7 @@ const en: MessageSchema = {
       converter: 'Send to Audio Converter',
       normalizer: 'Send to Normalizer',
       equalizer: 'Send to Equalizer 19',
+      playlist: 'Send to Playlist Generator',
     },
     sendingTo: 'Handing over …',
     sendToHintResult: 'Hands the exported file to the selected tool (new tab).',

@@ -1,6 +1,7 @@
 // src/services/sharedFiles.ts
 // Übergabe von Dateien an andere KodiniTools (gleiche Origin kodinitools.com).
-// Protokoll identisch zu Audiokonverter, Audio-Normalisierer und Equalizer 19:
+// Protokoll identisch zu Audiokonverter, Audio-Normalisierer, Equalizer 19 und
+// Playlist-Generator:
 // IndexedDB "kodinitools-shared-files", Store "audio-files"; das Ziel-Tool wird
 // mit "?source=<tool>" geöffnet und liest die Einträge beim Start aus.
 
@@ -62,8 +63,13 @@ export async function shareFiles(files: SharedFileInput[]): Promise<void> {
 }
 
 /** Ziel-Tools, an die ein Ausschnitt übergeben werden kann. */
-export type ShareTarget = 'converter' | 'normalizer' | 'equalizer'
-export const SHARE_TARGETS: readonly ShareTarget[] = ['converter', 'normalizer', 'equalizer']
+export type ShareTarget = 'converter' | 'normalizer' | 'equalizer' | 'playlist'
+export const SHARE_TARGETS: readonly ShareTarget[] = [
+  'converter',
+  'normalizer',
+  'equalizer',
+  'playlist',
+]
 
 /** URL des Ziel-Tools inkl. Quellkennung (Default: gleiche Origin). */
 export function shareTargetUrl(target: ShareTarget): string {
@@ -72,6 +78,7 @@ export function shareTargetUrl(target: ShareTarget): string {
     converter: env?.VITE_AUDIOKONVERTER_URL || '/audiokonverter/',
     normalizer: env?.VITE_AUDIONORMALISIERER_URL || '/audionormalisierer/app',
     equalizer: env?.VITE_EQUALISER19_URL || '/equaliser19/app',
+    playlist: env?.VITE_PLAYLIST_GENERATOR_URL || '/playlist_generator/app',
   }[target]
   return `${base}?source=${SHARE_SOURCE}`
 }
