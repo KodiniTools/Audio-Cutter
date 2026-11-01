@@ -1,6 +1,8 @@
 // src/i18n/index.ts
 // vue-i18n-Instanz (Composition API, legacy: false).
-// Locale-Reihenfolge: localStorage -> navigator.language -> 'de'.
+// Locale-Reihenfolge: ?lang=de|en (hreflang-Ziel) -> localStorage -> 'de'.
+// Ohne Parameter und Speicher gilt Deutsch: die URL ohne Parameter ist die
+// deutsche Fassung (hreflang de/x-default), Englisch liegt unter ?lang=en.
 //
 // Bruecke zu den globalen Partials (Nav/Footer/Cookie-Banner): Diese nutzen
 // den localStorage-Key 'locale' und das 'locale-changed'-Event. Damit beide
@@ -12,6 +14,23 @@ import { createI18n } from 'vue-i18n'
 import de from './locales/de'
 import en from './locales/en'
 import type { AppLocale, MessageSchema } from './messages'
+import { applyLocaleHead } from '../utils/localeSeo'
+
+export const SITE_URL = 'https://kodinitools.com/audio-cutter/'
+
+/** Titel und Beschreibung je Sprache (Deutsch steht zusätzlich statisch in index.html). */
+export const PAGE_META = {
+  de: {
+    title: 'Audio-Schneider · ms-genau | KodiniTools',
+    description:
+      'Audiodateien millisekundengenau schneiden – kostenlos, direkt im Browser (lokal & privat, ohne Upload) oder serverseitig für große Dateien. Export als WAV, MP3, OGG, AAC, WebM und FLAC mit Fade-In/-Out.',
+  },
+  en: {
+    title: 'Audio Cutter · Millisecond-Accurate | KodiniTools',
+    description:
+      'Cut audio files with millisecond accuracy – free, right in your browser (local & private, no upload) or on the server for large files. Export as WAV, MP3, OGG, AAC, WebM and FLAC with fade in/out.',
+  },
+} as const
 
 // Eigener Key der App; 'locale' ist der gemeinsame Key der globalen Partials.
 const STORAGE_KEY = 'ac_locale'
@@ -21,7 +40,9 @@ function isLocale(v: unknown): v is AppLocale {
   return v === 'de' || v === 'en'
 }
 
-function detectLocale(): AppLocale {
+export function detectLocale(search = globalThis.location?.search ?? ''): AppLocale {
+  const fromUrl = new URLSearchParams(search).get('lang')
+  if (isLocale(fromUrl)) return fromUrl
   try {
     // Gemeinsamen Partial-Key bevorzugen, damit die zentrale Nav die Sprache
     // seitenuebergreifend vorgeben kann; danach der App-eigene Key.
@@ -32,8 +53,7 @@ function detectLocale(): AppLocale {
   } catch {
     /* localStorage evtl. blockiert -> ignorieren */
   }
-  const nav = (typeof navigator !== 'undefined' ? navigator.language : 'de').toLowerCase()
-  return nav.startsWith('en') ? 'en' : 'de'
+  return 'de'
 }
 
 export const i18n = createI18n<[MessageSchema], AppLocale, false>({
@@ -44,7 +64,7 @@ export const i18n = createI18n<[MessageSchema], AppLocale, false>({
 })
 
 /**
- * Aktive Sprache umschalten (persistiert + setzt <html lang>).
+ * Aktive Sprache umschalten (persistiert + setzt <html lang>, Titel, Canonical, hreflang).
  * @param opts.silent  true = kein 'locale-changed' feuern (wird gesetzt, wenn
  *   der Wechsel bereits AUS diesem Event stammt -> verhindert Endlosschleife).
  */
@@ -56,7 +76,8 @@ export function setLocale(locale: AppLocale, opts: { silent?: boolean } = {}): v
   } catch {
     /* ignorieren */
   }
-  if (typeof document !== 'undefined') document.documentElement.lang = locale
+  // <html lang>, Titel, Canonical (EN = ?lang=en) und hreflang
+  applyLocaleHead(SITE_URL, locale, PAGE_META[locale])
   if (!opts.silent && typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('locale-changed', { detail: { locale } }))
   }
