@@ -21,14 +21,14 @@ export const SITE_URL = 'https://kodinitools.com/audio-cutter/'
 /** Titel und Beschreibung je Sprache (Deutsch steht zusätzlich statisch in index.html). */
 export const PAGE_META = {
   de: {
-    title: 'Audio-Schneider · ms-genau | KodiniTools',
+    title: 'MP3 schneiden online – Audio-Schneider ohne Upload | KodiniTools',
     description:
-      'Audiodateien millisekundengenau schneiden – kostenlos, direkt im Browser (lokal & privat, ohne Upload) oder serverseitig für große Dateien. Export als WAV, MP3, OGG, AAC, WebM und FLAC mit Fade-In/-Out.',
+      'MP3 schneiden online und kostenlos: Audio millisekundengenau kürzen, im Browser ohne Upload (Server-Modus optional). Fade-In/-Out, Export als WAV, MP3, FLAC.',
   },
   en: {
-    title: 'Audio Cutter · Millisecond-Accurate | KodiniTools',
+    title: 'Audio Cutter Online – Cut MP3 Without Upload | KodiniTools',
     description:
-      'Cut audio files with millisecond accuracy – free, right in your browser (local & private, no upload) or on the server for large files. Export as WAV, MP3, OGG, AAC, WebM and FLAC with fade in/out.',
+      'Free online audio cutter: trim MP3 and more with millisecond accuracy, locally in your browser, no upload (optional server mode). Fade in/out, WAV, MP3, FLAC.',
   },
 } as const
 
