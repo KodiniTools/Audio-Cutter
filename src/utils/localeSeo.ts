@@ -35,6 +35,13 @@ export function localeUrls(baseUrl: string, locale: Locale) {
   }
 }
 
+/** og:locale-Werte (Hauptsprache und Alternative) für eine Sprache. */
+export function ogLocales(locale: Locale): { locale: string; alternate: string } {
+  return locale === 'de'
+    ? { locale: 'de_DE', alternate: 'en_US' }
+    : { locale: 'en_US', alternate: 'de_DE' }
+}
+
 function upsert(
   doc: Document,
   selector: string,
@@ -72,12 +79,11 @@ export function applyLocaleHead(
     })
   }
   doc.head.querySelector('meta[property="og:url"]')?.setAttribute('content', canonical)
-  doc.head
-    .querySelector('meta[property="og:locale"]')
-    ?.setAttribute('content', locale === 'de' ? 'de_DE' : 'en_US')
+  const og = ogLocales(locale)
+  doc.head.querySelector('meta[property="og:locale"]')?.setAttribute('content', og.locale)
   doc.head
     .querySelector('meta[property="og:locale:alternate"]')
-    ?.setAttribute('content', locale === 'de' ? 'en_US' : 'de_DE')
+    ?.setAttribute('content', og.alternate)
   if (!meta) return
   doc.title = meta.title
   upsert(doc, 'meta[name="description"]', 'meta', {

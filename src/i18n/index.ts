@@ -15,22 +15,9 @@ import de from './locales/de'
 import en from './locales/en'
 import type { AppLocale, MessageSchema } from './messages'
 import { applyLocaleHead } from '../utils/localeSeo'
+import { PAGE_META, SITE_URL } from './pageMeta'
 
-export const SITE_URL = 'https://kodinitools.com/audio-cutter/'
-
-/** Titel und Beschreibung je Sprache (Deutsch steht zusätzlich statisch in index.html). */
-export const PAGE_META = {
-  de: {
-    title: 'MP3 schneiden online – Audio-Schneider ohne Upload | KodiniTools',
-    description:
-      'MP3 schneiden online und kostenlos: Audio millisekundengenau kürzen, im Browser ohne Upload (Server-Modus optional). Fade-In/-Out, Export als WAV, MP3, FLAC.',
-  },
-  en: {
-    title: 'Audio Cutter Online – Cut MP3 Without Upload | KodiniTools',
-    description:
-      'Free online audio cutter: trim MP3 and more with millisecond accuracy, locally in your browser, no upload (optional server mode). Fade in/out, WAV, MP3, FLAC.',
-  },
-} as const
+export { PAGE_META, SITE_URL }
 
 // Eigener Key der App; 'locale' ist der gemeinsame Key der globalen Partials.
 const STORAGE_KEY = 'ac_locale'
