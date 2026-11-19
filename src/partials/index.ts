@@ -1,14 +1,13 @@
 // src/partials/index.ts
-// Bindet die globalen KodiniTools-Partials (Nav, Footer, Cookie-Banner) in die
+// Bindet die globalen KodiniTools-Partials (Nav, Footer) in die
 // SPA ein. Die Partials sind bewusst als eigenstaendige Vanilla-Bausteine
 // gehalten (eigenes i18n via localStorage 'locale' + 'locale-changed'-Event,
 // eigenes Theme via [data-theme]), damit sie 1:1 mit den zentralen Versionen
-// der Website synchron bleiben. Google Consent Mode liegt separat im <head>
-// von index.html, da es vor allem anderen laufen muss.
+// der Website synchron bleiben. Kein Cookie-Banner/Consent Mode: KodiniTools
+// setzt keine Analyse-, Marketing- oder Tracking-Cookies ein (20.11.2026).
 
 import navHtml from './nav.html?raw'
 import footerHtml from './footer.html?raw'
-import cookieBannerHtml from './cookiebanner.html?raw'
 
 /**
  * Fuegt ein rohes HTML-Fragment relativ zu einem Referenzknoten ein und
@@ -43,7 +42,7 @@ function injectPartial(html: string, position: 'before' | 'after', ref: Element)
   scripts.forEach((script) => document.body.appendChild(script))
 }
 
-/** Nav oberhalb, Footer + Cookie-Banner unterhalb der Vue-App einhaengen. */
+/** Nav oberhalb, Footer unterhalb der Vue-App einhaengen. */
 export function mountGlobalPartials(): void {
   const app = document.getElementById('app')
   if (!app) return
@@ -51,8 +50,5 @@ export function mountGlobalPartials(): void {
   if (document.querySelector('.global-nav')) return
 
   injectPartial(navHtml, 'before', app)
-  // Cookie-Banner zuerst nach der App einhaengen, dann den Footer davor –
-  // so steht der Footer direkt unter der App (Banner ist ohnehin fixed).
-  injectPartial(cookieBannerHtml, 'after', app)
   injectPartial(footerHtml, 'after', app)
 }
