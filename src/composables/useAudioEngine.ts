@@ -165,13 +165,17 @@ export function useAudioEngine() {
    * Unterstützt Pause/Resume/Stop und meldet die Live-Position (ms) via onTime.
    * Web Audio kennt kein natives Pause -> beim Fortsetzen wird eine neue
    * BufferSource ab der eingefrorenen Position gestartet.
+   * Lautstärke: alle Quellen laufen über EINEN GainNode (live per setGain).
    */
   function createRegionPlayer(
     decoded: DecodedAudio,
     region: CutRegion,
     callbacks: { onTime: (ms: number) => void; onEnded: () => void },
+    options: { gain?: number } = {},
   ): RegionPlayer {
     const ctx = getContext()
+    const gainNode = ctx.createGain()
+    gainNode.gain.value = safeGain(options.gain ?? 1)
     const { sampleRate, channels } = decoded
     const buffer = ctx.createBuffer(channels.length, channels[0].length, sampleRate)
     // Unsere Kanäle sind ArrayBuffer-gestützt; copyToChannel verlangt seit TS 5.7 diesen Buffertyp.
@@ -200,6 +204,7 @@ export function useAudioEngine() {
         posMs = endMs
         callbacks.onTime(posMs)
         stopSrc()
+        releaseGain()
         paused = false
         posMs = startMs
         callbacks.onEnded()
@@ -228,12 +233,22 @@ export function useAudioEngine() {
       }
     }
 
+    function releaseGain(): void {
+      try {
+        gainNode.disconnect()
+      } catch {
+        /* ignore */
+      }
+    }
+
     function startFrom(ms: number): void {
       if (ctx.state === 'suspended') void ctx.resume()
       stopSrc()
       src = ctx.createBufferSource()
       src.buffer = buffer
-      src.connect(ctx.destination)
+      // Doppeltes connect() ist in Web Audio ein No-op (z. B. nach Pause).
+      gainNode.connect(ctx.destination)
+      src.connect(gainNode)
       anchorMs = Math.min(Math.max(ms, startMs), endMs)
       anchorCtxTime = ctx.currentTime
       posMs = anchorMs
@@ -259,6 +274,7 @@ export function useAudioEngine() {
       },
       stop(): void {
         stopSrc()
+        releaseGain()
         paused = false
         posMs = startMs
       },
@@ -268,10 +284,19 @@ export function useAudioEngine() {
       isPaused(): boolean {
         return paused
       },
+      setGain(gain: number): void {
+        // Kurze Glättung (~15 ms) gegen Knackser beim Ziehen des Reglers.
+        gainNode.gain.setTargetAtTime(safeGain(gain), ctx.currentTime, 0.015)
+      },
     }
   }
 
   return { decode, encode, toWavBlob, createRegionPlayer }
+}
+
+/** Ungültige/negative Verstärkung abfangen (GainNode wirft sonst bei NaN). */
+function safeGain(gain: number): number {
+  return Number.isFinite(gain) ? Math.max(0, gain) : 1
 }
 
 /** Steuer-Handle eines laufenden Vorschau-Players. */
@@ -285,4 +310,6 @@ export interface RegionPlayer {
   /** Aktuelle Position (ms). */
   currentMs(): number
   isPaused(): boolean
+  /** Lautstärke live ändern (linearer Faktor, 1 = unverändert). */
+  setGain(gain: number): void
 }

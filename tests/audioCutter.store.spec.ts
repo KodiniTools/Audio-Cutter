@@ -308,4 +308,70 @@ describe('audioCutter store · Undo/Redo', () => {
       expect(s.exportOptions.format).toBe('aac')
     })
   })
+  describe('Lautstärke', () => {
+    function loaded(value = 0.5) {
+      const s = useAudioCutterStore()
+      s.setDecoded(
+        { ...meta, durationMs: 1000, sampleRate: 1000, numberOfChannels: 1 },
+        { sampleRate: 1000, channels: [new Float32Array(1000).fill(value)] },
+        null,
+      )
+      return s
+    }
+
+    it('startet bei 100 % und klemmt auf 0–200', () => {
+      const s = loaded()
+      expect(s.volume).toBe(100)
+      expect(s.gain).toBe(1)
+      s.setVolume(250)
+      expect(s.volume).toBe(200)
+      s.setVolume(-5)
+      expect(s.volume).toBe(0)
+      s.setVolume(Number.NaN)
+      expect(s.volume).toBe(0)
+    })
+
+    it('wird beim Schneiden in den Puffer übernommen und danach auf 100 % gesetzt', () => {
+      const s = loaded(0.5)
+      s.setVolume(150)
+      expect(s.applyCut()).toBe(true)
+      expect(s.decoded!.channels[0][500]).toBeCloseTo(0.75)
+      expect(s.volume).toBe(100)
+      expect(s.hasEdits).toBe(true)
+    })
+
+    it('Undo stellt Puffer UND Lautstärke des Schnitts wieder her', () => {
+      const s = loaded(0.5)
+      s.setVolume(150)
+      s.applyCut()
+      s.undo()
+      expect(s.volume).toBe(150)
+      expect(s.decoded!.channels[0][500]).toBeCloseTo(0.5)
+      expect(s.hasEdits).toBe(false)
+    })
+
+    it('Lautstärke-Änderung ist ein eigener Undo-Schritt', () => {
+      const s = loaded()
+      s.setVolume(80)
+      expect(s.canUndo).toBe(true)
+      s.undo()
+      expect(s.volume).toBe(100)
+    })
+
+    it('meldet Übersteuerung, wenn Spitze × Faktor > 1', () => {
+      const s = loaded(0.6)
+      expect(s.clipping).toBe(false)
+      s.setVolume(160)
+      expect(s.clipping).toBe(false) // 0.96
+      s.setVolume(170)
+      expect(s.clipping).toBe(true) // 1.02
+    })
+
+    it('neue Datei bzw. reset setzt die Lautstärke zurück', () => {
+      const s = loaded()
+      s.setVolume(50)
+      s.reset()
+      expect(s.volume).toBe(100)
+    })
+  })
 })

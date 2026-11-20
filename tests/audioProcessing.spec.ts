@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyFade,
+  applyGain,
   cutChannels,
+  gainToDb,
+  peakOf,
+  volumeToGain,
   floatToInt16,
   removeRegion,
   sliceChannels,
@@ -108,6 +112,46 @@ describe('cutChannels', () => {
     expect(out[0][0]).toBeCloseTo(0)
     expect(out[0][99]).toBeCloseTo(0)
     expect(out[0][50]).toBeCloseTo(1)
+  })
+})
+
+describe('Lautstärke', () => {
+  it('volumeToGain klemmt auf 0–200 % und fängt Ungültiges ab', () => {
+    expect(volumeToGain(100)).toBe(1)
+    expect(volumeToGain(50)).toBe(0.5)
+    expect(volumeToGain(-10)).toBe(0)
+    expect(volumeToGain(500)).toBe(2)
+    expect(volumeToGain(Number.NaN)).toBe(1)
+  })
+  it('gainToDb rechnet in Dezibel um', () => {
+    expect(gainToDb(1)).toBe(0)
+    expect(gainToDb(2)).toBeCloseTo(6.02, 2)
+    expect(gainToDb(0)).toBe(-Infinity)
+  })
+  it('peakOf liefert den höchsten Absolutwert aller Kanäle', () => {
+    expect(peakOf([new Float32Array([0.1, -0.7]), new Float32Array([0.3])])).toBeCloseTo(0.7)
+    expect(peakOf([])).toBe(0)
+  })
+  it('applyGain skaliert und begrenzt auf [-1, 1]', () => {
+    const ch = [new Float32Array([0.25, -0.25, 0.8, -0.8])]
+    applyGain(ch, 2)
+    expect(Array.from(ch[0])).toEqual([0.5, -0.5, 1, -1])
+  })
+  it('applyGain mit 1 lässt den Puffer bitgenau', () => {
+    const ch = [new Float32Array([1.5, -0.3])]
+    applyGain(ch, 1)
+    expect(ch[0][0]).toBe(1.5)
+  })
+  it('cutChannels wendet die Lautstärke vor den Fades an, Eingabe bleibt unverändert', () => {
+    const ch = [new Float32Array(100).fill(0.4)]
+    const out = cutChannels(ch, 1000, 0, 100, 'keep', 20, 0, 0.5)
+    expect(out[0][50]).toBeCloseTo(0.2)
+    expect(out[0][0]).toBeCloseTo(0) // Fade-In wirkt weiterhin
+    expect(ch[0][50]).toBeCloseTo(0.4)
+  })
+  it('cutChannels ohne gain-Argument bleibt wie bisher (Faktor 1)', () => {
+    const out = cutChannels([new Float32Array(10).fill(0.3)], 1000, 0, 10, 'keep', 0, 0)
+    expect(out[0][5]).toBeCloseTo(0.3)
   })
 })
 

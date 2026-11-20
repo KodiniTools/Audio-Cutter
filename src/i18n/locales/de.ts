@@ -87,6 +87,12 @@ export default {
     setStart: 'Als Anfang',
     setEnd: 'Als Ende',
   },
+  volume: {
+    label: 'Lautstärke',
+    reset: 'Lautstärke auf 100 % zurücksetzen',
+    pending: 'Die Lautstärke wird beim Schneiden übernommen.',
+    clipping: 'Übersteuerung: Spitzen über 0 dB werden beim Schneiden begrenzt.',
+  },
   time: {
     start: 'Start',
     end: 'Ende',

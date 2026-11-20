@@ -73,9 +73,54 @@ export function applyFade(
   }
 }
 
+/** Grenzen des Lautstärkereglers in Prozent (100 % = unverändert). */
+export const VOLUME_MIN_PERCENT = 0
+export const VOLUME_MAX_PERCENT = 200
+export const VOLUME_DEFAULT_PERCENT = 100
+
+/** Prozentwert (0–200) -> linearer Verstärkungsfaktor (0–2). Ungültiges -> 1. */
+export function volumeToGain(percent: number): number {
+  if (!Number.isFinite(percent)) return 1
+  const p = Math.min(VOLUME_MAX_PERCENT, Math.max(VOLUME_MIN_PERCENT, percent))
+  return p / 100
+}
+
+/** Linearer Faktor -> Dezibel (0 -> -Infinity). */
+export function gainToDb(gain: number): number {
+  return gain > 0 ? 20 * Math.log10(gain) : -Infinity
+}
+
+/** Höchster Absolutwert über alle Kanäle (0 bei leerem Puffer). */
+export function peakOf(channels: Float32Array[]): number {
+  let peak = 0
+  for (const ch of channels) {
+    for (let i = 0; i < ch.length; i++) {
+      const v = Math.abs(ch[i])
+      if (v > peak) peak = v
+    }
+  }
+  return peak
+}
+
+/**
+ * Verstärkung in-place anwenden. Ergebnis wird auf [-1, 1] begrenzt – genau
+ * das, was auch bei der Wiedergabe hörbar ist (der Ausgang clippt dort ebenso).
+ * gain === 1 ist ein No-op (Puffer bleibt bitgenau).
+ */
+export function applyGain(channels: Float32Array[], gain: number): void {
+  if (gain === 1 || !Number.isFinite(gain)) return
+  const g = Math.max(0, gain)
+  for (const ch of channels) {
+    for (let i = 0; i < ch.length; i++) {
+      const v = ch[i] * g
+      ch[i] = v > 1 ? 1 : v < -1 ? -1 : v
+    }
+  }
+}
+
 /**
  * Ein vollständiger Schnitt auf Kanaldaten: wählt den Bereich (behalten oder
- * entfernen) und legt anschliessend die Fades an. Erzeugt stets FRISCHE Arrays
+ * entfernen), wendet die Lautstärke an und legt anschliessend die Fades an. Erzeugt stets FRISCHE Arrays
  * (slice/removeRegion kopieren), sodass die Eingabe unverändert bleibt – die
  * Grundlage des kumulativen Schneidens (jeder Schnitt = neuer Puffer, alte
  * Puffer bleiben für Undo/Redo erhalten).
@@ -88,11 +133,14 @@ export function cutChannels(
   cutMode: CutMode,
   fadeInMs: number,
   fadeOutMs: number,
+  gain = 1,
 ): Float32Array[] {
   const cut =
     cutMode === 'remove'
       ? removeRegion(channels, startSample, endSample)
       : sliceChannels(channels, startSample, endSample)
+  // Erst Lautstärke (auf die frischen Kopien), dann Fades.
+  applyGain(cut, gain)
   applyFade(cut, sampleRate, fadeInMs, fadeOutMs)
   return cut
 }

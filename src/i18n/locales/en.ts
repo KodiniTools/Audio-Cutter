@@ -87,6 +87,12 @@ const en: MessageSchema = {
     setStart: 'As start',
     setEnd: 'As end',
   },
+  volume: {
+    label: 'Volume',
+    reset: 'Reset volume to 100 %',
+    pending: 'The volume is applied when you cut.',
+    clipping: 'Clipping: peaks above 0 dB will be limited when you cut.',
+  },
   time: {
     start: 'Start',
     end: 'End',
