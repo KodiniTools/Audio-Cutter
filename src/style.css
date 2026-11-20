@@ -635,6 +635,118 @@ body
     padding: 0 var(--ds-space-4);
   }
 
+  /* Lautstärke-Regler in der Player-Leiste (Pill wie die Transport-Buttons). */
+  .volume-control {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    height: var(--ds-row-height);
+    padding: 0 var(--ds-space-2) 0 var(--ds-space-3);
+    border: var(--ds-border-width) solid var(--ds-border-strong);
+    border-radius: var(--ds-radius-full);
+    background: var(--ds-surface-2);
+    color: var(--ds-text);
+  }
+
+  .volume-icon {
+    width: 20px;
+    height: 20px;
+    flex: none;
+  }
+
+  #app .volume-slider {
+    width: 120px;
+  }
+
+  #app .volume-slider:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .volume-value {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    min-width: 4.5em;
+    font-family: var(--ds-font-mono);
+    font-size: var(--ds-text-sm);
+    font-weight: var(--ds-weight-semibold);
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .volume-db {
+    font-size: var(--ds-text-xs);
+    font-weight: var(--ds-weight-regular);
+    color: var(--ds-text-3);
+  }
+
+  .volume-value.is-clipping,
+  .volume-value.is-clipping .volume-db {
+    color: var(--ds-danger);
+  }
+
+  .volume-reset {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--ds-radius-full);
+    background: transparent;
+    color: var(--ds-text-2);
+    cursor: pointer;
+    transition: background-color var(--ds-duration) var(--ds-ease);
+  }
+
+  .volume-reset svg {
+    width: var(--ds-icon-sm);
+    height: var(--ds-icon-sm);
+  }
+
+  .volume-reset:hover:not(:disabled) {
+    background: var(--ds-surface-3);
+    color: var(--ds-text);
+  }
+
+  .volume-reset:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .volume-reset:focus-visible {
+    outline: none;
+    box-shadow: var(--ds-focus-ring);
+  }
+
+  /* Mobil: Regler bekommt eine eigene, volle Zeile über den Transport-Tasten. */
+  @media (max-width: 640px) {
+    .volume-control {
+      flex-basis: 100%;
+    }
+
+    #app .volume-slider {
+      flex: 1;
+      width: auto;
+      min-width: 0;
+    }
+  }
+
+  .volume-hint {
+    margin: 0;
+    font-size: var(--ds-text-sm);
+    color: var(--ds-text-3);
+    text-align: center;
+  }
+
+  .volume-hint--warn {
+    color: var(--ds-danger);
+    font-weight: var(--ds-weight-medium);
+  }
+
   .transport-btn.is-active {
     border-color: var(--ds-accent);
     background: var(--ds-accent-soft);

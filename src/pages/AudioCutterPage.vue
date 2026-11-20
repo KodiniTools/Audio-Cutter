@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useAudioCutterStore } from '../stores/audioCutter'
@@ -15,10 +15,11 @@ import TimeControls from '../components/TimeControls.vue'
 import ExportPanel from '../components/ExportPanel.vue'
 import ProgressOverlay from '../components/ProgressOverlay.vue'
 import ShortcutsHelp from '../components/ShortcutsHelp.vue'
+import VolumeControl from '../components/VolumeControl.vue'
 
 const { t, te } = useI18n({ useScope: 'global' })
 const store = useAudioCutterStore()
-const { meta, decoded, region, hasAudio, mode, exportOptions } = storeToRefs(store)
+const { meta, decoded, region, hasAudio, mode, exportOptions, gain } = storeToRefs(store)
 const engine = useAudioEngine()
 
 const waveformRef = ref<InstanceType<typeof WaveformEditor> | null>(null)
@@ -71,9 +72,14 @@ function startPlayback(startMs: number, endMs: number, preview = false): void {
         setPlayheadMs(cursorMs.value)
       },
     },
+    { gain: gain.value },
   )
   playState.value = 'playing'
 }
+
+// Lautstärke-Regler wirkt live auf die laufende/pausierte Wiedergabe
+// (auch nach Undo/Redo und dem Zurücksetzen auf 100 % beim Schnitt).
+watch(gain, (g) => player?.setGain(g))
 
 function setPlayheadMs(ms: number | null, opts: { follow?: boolean; ensure?: boolean } = {}): void {
   const d = store.durationMs
@@ -679,6 +685,8 @@ onBeforeUnmount(() => {
 
             <div class="flex flex-col items-center gap-3">
               <div class="flex flex-wrap items-center justify-center gap-3">
+                <!-- Lautstärke: live beim Abspielen, beim Schneiden übernommen -->
+                <VolumeControl />
                 <!-- Zum Track-Anfang springen (Cursor auf 0:00) -->
                 <button
                   class="transport-btn"
@@ -753,6 +761,18 @@ onBeforeUnmount(() => {
                   {{ t('player.preview') }}
                 </button>
               </div>
+
+              <!-- Lautstärke: Hinweis auf Übernahme beim Schneiden bzw. Übersteuerung -->
+              <p
+                v-if="store.clipping"
+                class="volume-hint volume-hint--warn"
+                role="status"
+              >
+                {{ t('volume.clipping') }}
+              </p>
+              <p v-else-if="store.volume !== 100" class="volume-hint" role="status">
+                {{ t('volume.pending') }}
+              </p>
 
               <!-- Cursor gesetzt: aktuelle Position als Anfang/Ende übernehmen -->
               <div

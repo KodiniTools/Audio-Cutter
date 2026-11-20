@@ -21,7 +21,14 @@ import type {
   Status,
 } from '../types/audio'
 import { clamp, msToSamples, samplesToMs, validateRegion } from '../utils/audioMath'
-import { cutChannels } from '../utils/sliceBuffer'
+import {
+  cutChannels,
+  peakOf,
+  VOLUME_DEFAULT_PERCENT,
+  VOLUME_MAX_PERCENT,
+  VOLUME_MIN_PERCENT,
+  volumeToGain,
+} from '../utils/sliceBuffer'
 import { isBrowserFormat } from '../utils/formats'
 
 /**
@@ -36,6 +43,7 @@ interface HistorySnapshot {
   region: CutRegion
   exportOptions: ExportOptions
   mode: ProcessingMode
+  volume: number
 }
 
 export const useAudioCutterStore = defineStore('audioCutter', () => {
@@ -55,6 +63,11 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
     fadeOutMs: 0,
     cutMode: 'keep',
   })
+  /**
+   * Lautstärke in Prozent (100 = unverändert). Wirkt live auf die Wiedergabe
+   * und wird beim nächsten Schnitt in den Puffer übernommen (danach wieder 100).
+   */
+  const volume = ref(VOLUME_DEFAULT_PERCENT)
   const status = ref<Status>('idle')
   const progress = ref(0) // 0..1
   const error = ref<string | null>(null)
@@ -89,6 +102,7 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
       region: region.value,
       exportOptions: exportOptions.value,
       mode: mode.value,
+      volume: volume.value,
     })
   }
   function applySnapshot(s: HistorySnapshot): void {
@@ -97,6 +111,7 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
     region.value = s.region
     exportOptions.value = s.exportOptions
     mode.value = s.mode
+    volume.value = s.volume
   }
   /** Ist-Zustand vor einer Änderung sichern (mit Zusammenfassung gleicher Art). */
   function record(label: string): void {
@@ -162,6 +177,12 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
   )
   /** Export/Download ist erst möglich, sobald mindestens ein Schnitt existiert. */
   const canExport = computed(() => hasAudio.value && hasEdits.value && !busy.value)
+  /** Linearer Verstärkungsfaktor der eingestellten Lautstärke. */
+  const gain = computed(() => volumeToGain(volume.value))
+  /** Spitzenpegel des aktuellen Puffers (nur bei Pufferwechsel neu berechnet). */
+  const peak = computed(() => (decoded.value ? peakOf(decoded.value.channels) : 0))
+  /** Mit der eingestellten Lautstärke würden Spitzen über 0 dBFS begrenzt. */
+  const clipping = computed(() => peak.value * gain.value > 1)
   const canUndo = computed(() => past.value.length > 0)
   const canRedo = computed(() => future.value.length > 0)
 
@@ -176,6 +197,7 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
     progress.value = 0
     error.value = null
     result.value = null
+    volume.value = VOLUME_DEFAULT_PERCENT
     clearHistory()
   }
 
@@ -190,6 +212,7 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
     progress.value = 0
     error.value = null
     result.value = null
+    volume.value = VOLUME_DEFAULT_PERCENT
     // Neue Datei = frischer Ausgangszustand -> Historie verwerfen.
     clearHistory()
   }
@@ -231,6 +254,15 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
     }
   }
 
+  /** Lautstärke (Prozent) setzen; geklemmt auf 0–200, ganzzahlig. */
+  function setVolume(percent: number): void {
+    if (!Number.isFinite(percent)) return
+    const next = Math.round(Math.min(VOLUME_MAX_PERCENT, Math.max(VOLUME_MIN_PERCENT, percent)))
+    if (next === volume.value) return
+    record('volume')
+    volume.value = next
+  }
+
   /** Ergebnis der WebCodecs-Feature-Erkennung übernehmen (kein Undo-Schritt). */
   function setWebCodecsFormats(formats: ExportFormat[]): void {
     webCodecsFormats.value = [...formats]
@@ -255,8 +287,9 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
   }
 
   /**
-   * Wendet den aktuellen Schnitt (Aktion behalten/entfernen + Fades) auf den
-   * bearbeiteten Puffer an und ersetzt ihn. Jeder Aufruf ist ein eigener
+   * Wendet den aktuellen Schnitt (Aktion behalten/entfernen + Lautstärke +
+   * Fades) auf den bearbeiteten Puffer an und ersetzt ihn. Die Lautstärke ist
+   * danach im Puffer enthalten und der Regler steht wieder auf 100 %. Jeder Aufruf ist ein eigener
    * Undo-Schritt. Nach dem Schnitt umfasst die Auswahl wieder den ganzen
    * (neuen) Puffer. Gibt true zurück, wenn ein Schnitt erfolgt ist.
    */
@@ -273,6 +306,7 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
       exportOptions.value.cutMode,
       exportOptions.value.fadeInMs,
       exportOptions.value.fadeOutMs,
+      gain.value,
     )
     if (next.length === 0 || next[0].length === 0) {
       error.value = 'emptyRegion'
@@ -287,6 +321,8 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
     // Auswahl auf den gesamten neuen Puffer setzen (Ausgangspunkt für den
     // nächsten Schnitt).
     region.value = { startMs: 0, endMs: newDurationMs }
+    // Lautstärke steckt jetzt im Puffer -> nicht doppelt anwenden.
+    volume.value = VOLUME_DEFAULT_PERCENT
     error.value = null
     clearStaleResult()
     return true
@@ -345,6 +381,7 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
     result,
     sourceFile,
     webCodecsFormats,
+    volume,
     // getters
     durationMs,
     hasAudio,
@@ -356,6 +393,9 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
     canExport,
     canUndo,
     canRedo,
+    gain,
+    peak,
+    clipping,
     // actions
     reset,
     setDecoded,
@@ -364,6 +404,7 @@ export const useAudioCutterStore = defineStore('audioCutter', () => {
     setRegion,
     setMode,
     setWebCodecsFormats,
+    setVolume,
     patchExportOptions,
     applyCut,
     setStatus,
