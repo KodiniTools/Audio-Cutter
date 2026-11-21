@@ -13,6 +13,17 @@ export default [
     files: ['**/*.vue'],
     languageOptions: { parserOptions: { parser: tseslint.parser } },
   },
+  {
+    // Node-Server (Express/PM2): Node-Globals; _next muss für Express-Fehler-Middleware
+    // (4 Parameter) stehen bleiben, auch wenn ungenutzt.
+    files: ['server/**/*.{js,cjs}'],
+    languageOptions: {
+      globals: { process: 'readonly', module: 'writable', __dirname: 'readonly' },
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
+  },
   { ignores: ['dist/', 'node_modules/', 'server/node_modules/'] },
   prettier,
 ]
