@@ -11,6 +11,33 @@ const en: MessageSchema = {
       'Cut with millisecond precision – locally in the browser or server-side for large files.',
     footer: 'Privacy First · Browser mode processes files without uploading.',
   },
+  landing: {
+    category: 'Audio editing',
+    title: 'Audio Cutter',
+    description:
+      'Cut audio files with millisecond precision. Select a region in the waveform, preview it and export your edit.',
+    open: 'Open Audio Cutter',
+    featuresLink: 'Explore features',
+    trust: ['No sign-up', 'Local processing in your browser'],
+    imageAlt: 'Audio waveform with a region marked in gold between the start and end points',
+    featureTitle: 'From audio track to finished cut',
+    features: [
+      [
+        'Select a precise region',
+        'Set the start and end in the waveform or enter the times to the millisecond.',
+      ],
+      [
+        'Preview your selection',
+        'Listen to the selected region, keep or remove it, and apply fades if needed.',
+      ],
+      [
+        'Export your edit',
+        'Save to WAV, MP3 or FLAC in your browser. Other formats depend on the processing mode.',
+      ],
+    ],
+    finalTitle: 'Ready for your first cut?',
+    finalText: 'Open the editor and choose an audio file.',
+  },
   sections: {
     file: 'File',
   },

@@ -1,0 +1,330 @@
+/* ==========================================================================
+   Audio-Schneider · Etappe 1: Landingpage und Workspace-Grundflächen
+   --------------------------------------------------------------------------
+   Aufbau, Maße, Schriftgrößen und Verläufe entsprechen der Landingpage des
+   Playlist Generators (dort assets/kodini-landing-modern.css + tokens-v2.css).
+
+   - Die gesamte Gestaltung dieser Etappe liegt in dieser Datei; die Tokens,
+     die der Playlist Generator zusätzlich führt, sind hier lokal definiert
+     (--cutter-*), damit tokens-v2.css unverändert bleibt.
+   - Überschriften ausschließlich Supreme Regular 400, ohne synthetisches Fett.
+   - Hell: :root[data-theme='light'] (SSI-Nav) und .light-theme (App).
+   ========================================================================== */
+
+/* === Etappen-Tokens (Werte 1:1 aus Playlist Generator tokens-v2.css) === */
+.cutter-landing,
+#app .app-page {
+  --cutter-accent-fill: #8f6320;
+  --cutter-accent-fill-hover: #9a6b24;
+  --cutter-on-accent-fill: #ffffff;
+  --cutter-heading-accent: #69d7e9;
+  --cutter-landing-glow:
+    radial-gradient(ellipse at 85% 0%, rgba(38, 167, 187, 0.16), transparent 68%),
+    radial-gradient(ellipse at 12% 0%, rgba(55, 114, 202, 0.2), transparent 62%);
+  --cutter-app-glow:
+    radial-gradient(ellipse 72% 38% at 82% 4%, rgba(37, 105, 157, 0.13), transparent 75%),
+    radial-gradient(ellipse 58% 38% at 5% 42%, rgba(27, 91, 130, 0.07), transparent 76%);
+  --cutter-card-gradient: linear-gradient(150deg, var(--ds-surface-1), var(--ds-surface-0));
+  --cutter-panel: color-mix(in srgb, var(--ds-surface-1) 95%, #3c98b9);
+  --cutter-line: color-mix(in srgb, var(--ds-border) 82%, #3c98b9);
+}
+
+:is(:root[data-theme='light'], .light-theme) :is(.cutter-landing, #app .app-page) {
+  --cutter-accent-fill-hover: #7d561c;
+  --cutter-heading-accent: #086a80;
+  --cutter-landing-glow:
+    radial-gradient(ellipse at 85% 0%, rgba(35, 162, 195, 0.16), transparent 68%),
+    radial-gradient(ellipse at 12% 0%, rgba(86, 147, 216, 0.15), transparent 62%);
+  --cutter-app-glow:
+    radial-gradient(ellipse 72% 38% at 82% 4%, rgba(54, 135, 183, 0.075), transparent 75%),
+    radial-gradient(ellipse 58% 38% at 5% 42%, rgba(75, 137, 169, 0.045), transparent 76%);
+}
+
+/* === Überschriften: nur Supreme Regular (Landingpage und Editor) === */
+.cutter-landing,
+.cutter-landing :is(h1, h2, h3),
+#app :is(h1, h2, h3, h4, h5, h6) {
+  font-weight: var(--ds-weight-regular);
+  font-synthesis: none;
+}
+
+/* === Seite === */
+.cutter-landing {
+  position: relative;
+  min-height: 100vh;
+  background-color: var(--ds-surface-0);
+  background-image: var(--cutter-landing-glow);
+  background-repeat: no-repeat;
+  background-size: 100% 42rem;
+  color: var(--ds-text);
+  font-size: var(--ds-text-md);
+  line-height: var(--ds-leading);
+}
+
+.cutter-landing__container {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding-inline: clamp(var(--ds-space-3), 3vw, var(--ds-space-6));
+}
+
+/* === Hero === */
+.cutter-landing__hero {
+  padding-block: clamp(var(--ds-space-8), 7vw, 6rem) clamp(var(--ds-space-8), 5vw, 4rem);
+}
+
+.cutter-landing__hero > .cutter-landing__container {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: clamp(var(--ds-space-6), 5vw, var(--ds-space-16));
+}
+
+.cutter-landing__content {
+  max-width: 680px;
+  text-align: start;
+}
+
+.cutter-landing__category {
+  margin: 0 0 var(--ds-space-3);
+  font-size: var(--ds-text-sm);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cutter-heading-accent);
+}
+
+/* Display-Größe nur hier: die Token-Skala endet bei 32 px. */
+.cutter-landing h1 {
+  margin: 0 0 var(--ds-space-3);
+  font-size: clamp(2.25rem, 5.25vw, 4.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+  overflow-wrap: anywhere;
+  color: var(--ds-text);
+}
+
+.cutter-landing__lead {
+  margin: 0 0 var(--ds-space-6);
+  font-size: var(--ds-text-md);
+  color: var(--ds-text-2);
+}
+
+.cutter-landing__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+}
+
+.cutter-landing__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--ds-control-lg);
+  padding: 0 var(--ds-space-5);
+  border: var(--ds-border-width) solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-1);
+  color: var(--ds-text);
+  font-size: var(--ds-text-lg);
+  text-decoration: none;
+  transition:
+    background-color var(--ds-duration) var(--ds-ease),
+    border-color var(--ds-duration) var(--ds-ease);
+}
+
+.cutter-landing__button:hover {
+  background: var(--ds-surface-2);
+  color: var(--ds-text);
+}
+
+.cutter-landing__button--primary {
+  border-color: transparent;
+  background: var(--cutter-accent-fill);
+  color: var(--cutter-on-accent-fill);
+}
+
+.cutter-landing__button--primary:hover {
+  background: var(--cutter-accent-fill-hover);
+  color: var(--cutter-on-accent-fill);
+}
+
+.cutter-landing__button:focus-visible {
+  outline: none;
+  box-shadow: var(--ds-focus-ring);
+}
+
+.cutter-landing__trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2) var(--ds-space-4);
+  margin: var(--ds-space-4) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-2);
+}
+
+.cutter-landing__trust li::before {
+  content: '✓';
+  margin-inline-end: var(--ds-space-2);
+  color: var(--cutter-heading-accent);
+}
+
+/* Hero-Bild: nie größer als 800 px, Platz über width/height reserviert. */
+.cutter-landing__media {
+  max-width: 800px;
+  margin: 0;
+  overflow: hidden;
+  border: var(--ds-border-width) solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-surface-2);
+  box-shadow: var(--ds-shadow-overlay);
+}
+
+.cutter-landing__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1080 / 760;
+}
+
+/* === Sektionen === */
+.cutter-landing__features,
+.cutter-landing__start {
+  padding-block: clamp(var(--ds-space-8), 5vw, var(--ds-space-16));
+}
+
+.cutter-landing__features {
+  border-top: var(--ds-border-width) solid var(--ds-border);
+  border-bottom: var(--ds-border-width) solid var(--ds-border);
+  background: var(--ds-surface-1);
+  scroll-margin-top: var(--external-nav-height, 0px);
+}
+
+.cutter-landing__section-title {
+  margin: 0 0 var(--ds-space-8);
+  font-size: var(--ds-text-2xl);
+  line-height: var(--ds-leading-tight);
+  letter-spacing: var(--ds-tracking-tight);
+  text-align: center;
+  color: var(--ds-text);
+}
+
+.cutter-landing__section-title:has(+ .cutter-landing__section-lead) {
+  margin-bottom: var(--ds-space-2);
+}
+
+.cutter-landing__section-lead {
+  max-width: 720px;
+  margin: 0 auto var(--ds-space-6);
+  text-align: center;
+  color: var(--ds-text-2);
+}
+
+.cutter-landing__start > .cutter-landing__container {
+  text-align: center;
+}
+
+/* === Karten === */
+.cutter-landing__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: var(--ds-gap);
+}
+
+.cutter-landing__card {
+  padding: var(--ds-space-5);
+  border: var(--ds-border-width) solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--cutter-card-gradient);
+  transition: border-color var(--ds-duration) var(--ds-ease);
+}
+
+.cutter-landing__card:hover {
+  border-color: var(--ds-border-strong);
+}
+
+.cutter-landing__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ds-control-lg);
+  height: var(--ds-control-lg);
+  margin-bottom: var(--ds-space-3);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-2);
+  color: var(--cutter-heading-accent);
+}
+
+.cutter-landing__icon svg {
+  width: var(--ds-icon-md);
+  height: var(--ds-icon-md);
+}
+
+.cutter-landing__card h3 {
+  margin: 0 0 var(--ds-space-2);
+  font-size: var(--ds-text-lg);
+  line-height: var(--ds-leading-tight);
+  color: var(--ds-text);
+}
+
+.cutter-landing__card p {
+  margin: 0;
+  font-size: var(--ds-text-md);
+  color: var(--ds-text-2);
+}
+
+/* === Editor: Grundflächen mit demselben Blau-Cyan-Verlauf === */
+#app .app-page {
+  background-color: var(--ds-surface-0);
+  background-image: var(--cutter-app-glow);
+  background-attachment: fixed;
+}
+
+#app .app-page .workspace-main {
+  background: transparent;
+}
+
+#app .app-page .sidebar {
+  background: var(--cutter-panel);
+  border-color: var(--cutter-line);
+}
+
+/* === Schmale Bildschirme (Schwellen wie im Playlist Generator) === */
+@media (max-width: 768px) {
+  .cutter-landing__section-title {
+    margin-bottom: var(--ds-space-6);
+    font-size: var(--ds-text-xl);
+  }
+
+  .cutter-landing__section-title:has(+ .cutter-landing__section-lead) {
+    margin-bottom: var(--ds-space-2);
+  }
+}
+
+@media (max-width: 760px) {
+  .cutter-landing__hero > .cutter-landing__container {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .cutter-landing__media {
+    border-radius: var(--ds-radius-md);
+  }
+
+  .cutter-landing__button {
+    width: 100%;
+    max-width: 320px;
+    height: var(--ds-row-height);
+  }
+
+  .cutter-landing__card {
+    padding: var(--ds-space-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cutter-landing :is(.cutter-landing__button, .cutter-landing__card) {
+    transition: none;
+  }
+}
