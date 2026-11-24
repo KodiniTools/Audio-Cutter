@@ -11,6 +11,33 @@ export default {
       'Millisekunden-genau schneiden – lokal im Browser oder serverseitig für große Dateien.',
     footer: 'Privacy First · Browser-Modus verarbeitet Dateien ohne Upload.',
   },
+  landing: {
+    category: 'Audiobearbeitung',
+    title: 'Audio-Schneider',
+    description:
+      'Schneide Audiodateien millisekundengenau. Markiere den gewünschten Bereich in der Wellenform, höre ihn vor und exportiere deinen Schnitt.',
+    open: 'Audio-Schneider öffnen',
+    featuresLink: 'Funktionen ansehen',
+    trust: ['Ohne Anmeldung', 'Lokale Verarbeitung im Browser'],
+    imageAlt: 'Audio-Wellenform mit gold markiertem Schnittbereich zwischen Start- und Endmarke',
+    featureTitle: 'Vom Audiotrack zum fertigen Schnitt',
+    features: [
+      [
+        'Bereich präzise wählen',
+        'Setze Anfang und Ende in der Wellenform oder gib die Zeiten millisekundengenau ein.',
+      ],
+      [
+        'Schnitt vorhören',
+        'Höre die Auswahl ab. Behalte oder entferne den markierten Abschnitt und setze bei Bedarf Fades.',
+      ],
+      [
+        'Datei exportieren',
+        'Speichere deinen Schnitt im Browser als WAV, MP3 oder FLAC. Weitere Formate hängen vom Verarbeitungsmodus ab.',
+      ],
+    ],
+    finalTitle: 'Bereit für den ersten Schnitt?',
+    finalText: 'Öffne den Editor und wähle eine Audiodatei aus.',
+  },
   sections: {
     file: 'Datei',
   },
