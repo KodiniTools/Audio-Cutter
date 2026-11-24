@@ -7,6 +7,7 @@ export default {
   app: {
     title: 'Audio-Schneider',
     badge: '·ms',
+    home: 'Startseite',
     subtitle:
       'Millisekunden-genau schneiden – lokal im Browser oder serverseitig für große Dateien.',
     footer: 'Privacy First · Browser-Modus verarbeitet Dateien ohne Upload.',

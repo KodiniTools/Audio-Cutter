@@ -7,6 +7,7 @@ const en: MessageSchema = {
   app: {
     title: 'Audio Cutter',
     badge: '·ms',
+    home: 'Home',
     subtitle:
       'Cut with millisecond precision – locally in the browser or server-side for large files.',
     footer: 'Privacy First · Browser mode processes files without uploading.',
