@@ -70,3 +70,20 @@
   min-width: 0;
   max-width: 100%;
 }
+
+/* Zeitfelder dürfen auf schmalen Displays neben der Einheit schrumpfen. */
+#app .cutter-time-card input[type='number'] {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  #app .sidebar .field-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  #app .sidebar .field-row :is(.field-input, .field-select) {
+    width: 100%;
+  }
+}

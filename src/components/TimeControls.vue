@@ -78,8 +78,9 @@ const canReset = computed(
 <template>
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
     <div class="cutter-time-card workspace-card p-4">
-      <label class="caps-label mb-1.5 block">{{ t('time.start') }}</label>
+      <label for="ac-start-time" class="caps-label mb-1.5 block">{{ t('time.start') }}</label>
       <input
+        id="ac-start-time"
         v-model="startText"
         class="field-input font-mono !w-full !text-lg cutter-time-value"
         inputmode="decimal"
@@ -110,8 +111,9 @@ const canReset = computed(
     </div>
 
     <div class="cutter-time-card workspace-card p-4">
-      <label class="caps-label mb-1.5 block">{{ t('time.end') }}</label>
+      <label for="ac-end-time" class="caps-label mb-1.5 block">{{ t('time.end') }}</label>
       <input
+        id="ac-end-time"
         v-model="endText"
         class="field-input font-mono !w-full !text-lg cutter-time-value"
         inputmode="decimal"
@@ -146,7 +148,7 @@ const canReset = computed(
         {{ t('time.selection') }} <span class="font-mono font-semibold text-ink">{{ formatMs(selectedDurationMs) }}</span>
         <span class="text-ink-3"> / {{ formatMs(durationMs) }}</span>
       </span>
-      <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center gap-3">
         <span v-if="!regionValidation.valid && regionValidation.errorCode" class="font-medium text-warning">
           {{ t(`validation.${regionValidation.errorCode}`) }}
         </span>

@@ -18,7 +18,13 @@ export const router = createRouter({
   ],
   scrollBehavior(to, from, savedPosition) {
     if (savedPosition) return savedPosition
-    if (to.hash === '#funktionen' && to.name === 'landing') return { el: to.hash }
+    if (to.hash === '#funktionen' && to.name === 'landing') {
+      const section = document.getElementById('funktionen')
+      if (section) {
+        const offset = Number.parseFloat(getComputedStyle(section).scrollMarginTop) || 0
+        return { el: section, top: offset }
+      }
+    }
     if (to.name !== from.name) return { top: 0 }
     return false
   },
