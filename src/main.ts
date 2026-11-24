@@ -10,6 +10,7 @@ import './style.css'
 import './assets/kodini-stage1.css'
 import './assets/kodini-stage2.css'
 import './assets/kodini-stage3.css'
+import './assets/kodini-stage4.css'
 
 // Erkannte Sprache <html lang> setzen UND in beide localStorage-Keys
 // schreiben (still), damit die gleich eingehaengte globale Nav dieselbe

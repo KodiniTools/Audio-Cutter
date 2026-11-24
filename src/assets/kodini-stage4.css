@@ -1,0 +1,72 @@
+/* Darstellung des Editors mit geladener Audiodatei. */
+#app .app-page {
+  --cutter-selection-text: #e0b06a;
+}
+
+:root[data-theme='light'] #app .app-page {
+  --cutter-selection-text: #8f6320;
+}
+
+#app :is(.cutter-waveform, .cutter-player, .cutter-track, .cutter-time-card) {
+  min-width: 0;
+  border: 1px solid var(--cutter-line);
+  border-radius: 15px;
+  background: var(--cutter-panel);
+}
+
+.cutter-waveform,
+.cutter-player {
+  padding: clamp(10px, 2vw, 20px);
+}
+
+.cutter-waveform__toolbar {
+  margin-bottom: 12px;
+}
+
+.cutter-waveform__toolbar > div {
+  flex-wrap: wrap;
+}
+
+#app .cutter-waveform__canvas {
+  display: block;
+  height: clamp(170px, 26vw, 280px);
+  border-color: var(--cutter-line);
+  border-radius: 10px;
+  background: var(--ds-surface-0);
+}
+
+.cutter-waveform__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 136px), 1fr));
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.cutter-waveform__metric {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--cutter-line);
+  border-radius: 8px;
+  background: var(--ds-surface-0);
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.cutter-waveform__metric:nth-child(2) {
+  border-color: var(--cutter-selection-text);
+}
+
+#app .cutter-time-card .cutter-time-value {
+  color: var(--cutter-selection-text);
+  font-weight: 500;
+}
+
+#app .cutter-track > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#app .cutter-player > div {
+  min-width: 0;
+  max-width: 100%;
+}

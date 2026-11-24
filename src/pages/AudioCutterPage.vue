@@ -683,7 +683,7 @@ onBeforeUnmount(() => {
             </div>
 
             <div
-              class="workspace-card flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm"
+              class="cutter-track workspace-card flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm"
             >
               <span class="truncate font-semibold text-ink">{{ meta?.name }}</span>
               <span class="font-mono text-xs text-ink-3">
@@ -714,7 +714,7 @@ onBeforeUnmount(() => {
 
             <WaveformEditor ref="waveformRef" @seek="onSeek" />
 
-            <div class="flex flex-col items-center gap-3">
+            <div class="cutter-player flex flex-col items-center gap-3">
               <div class="flex flex-wrap items-center justify-center gap-3">
                 <!-- Lautstärke: live beim Abspielen, beim Schneiden übernommen -->
                 <VolumeControl />

@@ -77,11 +77,11 @@ const canReset = computed(
 
 <template>
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-    <div class="workspace-card p-4">
+    <div class="cutter-time-card workspace-card p-4">
       <label class="caps-label mb-1.5 block">{{ t('time.start') }}</label>
       <input
         v-model="startText"
-        class="field-input font-mono !w-full !text-lg !font-bold text-warning"
+        class="field-input font-mono !w-full !text-lg cutter-time-value"
         inputmode="decimal"
         :placeholder="t('time.placeholder')"
       />
@@ -93,7 +93,7 @@ const canReset = computed(
           :max="maxMs"
           step="1"
           :aria-label="t('time.start') + ' (ms)'"
-          class="field-input font-mono !w-32 !font-bold text-warning"
+          class="field-input font-mono !w-32 cutter-time-value"
         />
         <span class="text-xs text-ink-3">ms</span>
       </div>
@@ -109,11 +109,11 @@ const canReset = computed(
       </div>
     </div>
 
-    <div class="workspace-card p-4">
+    <div class="cutter-time-card workspace-card p-4">
       <label class="caps-label mb-1.5 block">{{ t('time.end') }}</label>
       <input
         v-model="endText"
-        class="field-input font-mono !w-full !text-lg !font-bold text-danger"
+        class="field-input font-mono !w-full !text-lg cutter-time-value"
         inputmode="decimal"
         :placeholder="t('time.placeholder')"
       />
@@ -125,7 +125,7 @@ const canReset = computed(
           :max="maxMs"
           step="1"
           :aria-label="t('time.end') + ' (ms)'"
-          class="field-input font-mono !w-32 !font-bold text-danger"
+          class="field-input font-mono !w-32 cutter-time-value"
         />
         <span class="text-xs text-ink-3">ms</span>
       </div>

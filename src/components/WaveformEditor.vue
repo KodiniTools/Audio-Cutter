@@ -48,20 +48,17 @@ const moved = ref(false)
 const downX = ref(0)
 const DRAG_THRESHOLD_PX = 3
 
-// Canvas-Farben aus den Design-Tokens v2 (themeColorsV2, dieselben Werte wie
-// --ds-* in tokens-v2.css). Das Theme kommt aus dem Settings-Store, der auch
-// Theme-Wechsel der globalen Nav übernimmt; ein Wechsel zeichnet neu.
-// Rollen: Wellenform = info, Auswahl = accent-soft, Auswahlanfang = warning
-// (gelb), Auswahlende = danger (rot), Marker = Text, Fläche = Panel.
+// Die Canvas-Palette folgt dem Settings-Store. Blau kennzeichnet das
+// Signal, Gold begrenzt die Auswahl und der helle/dunkle Cursor bleibt separat.
 const colors = computed(() => {
   const c = themeColorsV2(settings.theme)
   return {
     waveform: c.info,
     regionFill: c.accentSoft,
     regionStartBorder: c.warning,
-    regionEndBorder: c.danger,
+    regionEndBorder: c.warning,
     playhead: c.text,
-    background: c.surface1,
+    background: c.surface0,
     axis: c.border,
   }
 })
@@ -344,9 +341,9 @@ defineExpose({
 </script>
 
 <template>
-  <div class="w-full">
+  <div class="cutter-waveform w-full">
     <!-- Werkzeugleiste: Verlauf + Marker folgen | Zoom -->
-    <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+    <div class="cutter-waveform__toolbar flex flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-1">
         <!-- Undo / Redo -->
         <button
@@ -430,7 +427,7 @@ defineExpose({
     <canvas
       id="waveform-canvas"
       ref="canvasRef"
-      class="h-40 w-full cursor-crosshair touch-none select-none rounded-md border border-line bg-surface-1"
+      class="cutter-waveform__canvas w-full cursor-crosshair touch-none select-none rounded-md border border-line bg-surface-1"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
@@ -465,20 +462,20 @@ defineExpose({
     </div>
 
     <!-- Live-Werte: Gesamtdauer · Auswahl · Cursor · Restdauer (live) -->
-    <div class="mt-2 flex items-start justify-between gap-2 font-mono text-xs font-bold">
-      <div class="text-left">
+    <div class="cutter-waveform__metrics font-mono text-xs">
+      <div class="cutter-waveform__metric">
         <div class="caps-label font-sans !text-ink-3">{{ t('waveform.total') }}</div>
         <div class="text-ink">{{ msLabel(durationMs) }}</div>
       </div>
-      <div class="text-center">
+      <div class="cutter-waveform__metric">
         <div class="caps-label font-sans !text-ink-3">{{ t('waveform.selection') }}</div>
         <div class="text-ink-2">{{ msLabel(selectedDurationMs) }}</div>
       </div>
-      <div class="text-center">
+      <div class="cutter-waveform__metric">
         <div class="caps-label font-sans !text-ink-3">{{ t('waveform.cursor') }}</div>
         <div class="text-ink-2">{{ cursorLiveMs !== null ? msLabel(cursorLiveMs) : '–' }}</div>
       </div>
-      <div class="text-right">
+      <div class="cutter-waveform__metric">
         <div class="caps-label font-sans !text-ink-3">{{ t('waveform.remaining') }}</div>
         <div class="text-ink">{{ remainingMs !== null ? msLabel(remainingMs) : '–' }}</div>
       </div>
