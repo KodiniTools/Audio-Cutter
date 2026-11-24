@@ -1,0 +1,156 @@
+/* Gemeinsame Schaltflächen nach dem Vorbild der Landingpage. */
+:root {
+  --cutter-button-radius: 10px;
+  --cutter-button-fill: var(--ds-surface-1);
+  --cutter-button-hover: var(--ds-surface-2);
+  --cutter-button-border: var(--ds-border-strong);
+  --cutter-button-focus: #82d4ed;
+  /* KodiniTools-Standard für gefüllte Hauptbuttons und Sprachauswahl in beiden Themes. */
+  --cutter-button-gold: #8f6320;
+  --cutter-button-gold-hover: #7d561c;
+  --cutter-button-gold-ink: #fff;
+}
+
+:root[data-theme='light'] {
+  --cutter-button-focus: #175a77;
+}
+
+#app :is(button, .cutter-landing__button),
+body > .global-nav.global-nav button {
+  --button-fill: var(--cutter-button-fill);
+  --button-ink: var(--ds-text);
+  --button-border: var(--cutter-button-border);
+  --button-hover: var(--cutter-button-hover);
+  --button-hover-border: var(--cutter-button-focus);
+  border: 1px solid var(--button-border);
+  border-radius: var(--cutter-button-radius);
+  background-color: var(--button-fill);
+  color: var(--button-ink);
+  font-weight: 400;
+  box-shadow: none;
+  transition:
+    background-color var(--ds-duration) var(--ds-ease),
+    border-color var(--ds-duration) var(--ds-ease);
+}
+
+/* Das bestehende Partial setzt seine Hintergrundfarben mit !important. */
+body > .global-nav.global-nav button {
+  background-color: var(--button-fill) !important;
+}
+
+#app :is(.cutter-landing__button--primary, .export-btn-primary, .transport-btn--primary),
+body > .global-nav.global-nav .global-nav-lang-btn.active {
+  --button-fill: var(--cutter-button-gold);
+  --button-ink: var(--cutter-button-gold-ink);
+  --button-border: transparent;
+  --button-hover: var(--cutter-button-gold-hover);
+  --button-hover-border: transparent;
+  color: var(--button-ink);
+  font-weight: 500;
+}
+
+body > .global-nav.global-nav .global-nav-lang-btn.active {
+  background-color: var(--button-fill) !important;
+}
+
+/* style.css erzwingt für alle Elemente der Navigation
+   color: var(--ds-text) !important (Selektor mit :not(#app)). Die weiße
+   Beschriftung auf Dunkelgold braucht deshalb !important und zwei ID-Anteile. */
+body > .global-nav:not(#app):not(#modal-portal) .global-nav-lang-btn.active {
+  color: var(--cutter-button-gold-ink) !important;
+}
+
+body > .global-nav.global-nav .global-nav-lang-btn.active:hover {
+  background-color: var(--button-hover) !important;
+}
+
+#app :is(.export-btn-danger, .btn-danger) {
+  --button-ink: var(--ds-danger);
+  --button-hover-border: var(--ds-danger);
+}
+
+#app button.is-active {
+  --button-fill: var(--ds-accent-soft);
+  --button-border: var(--cutter-button-gold);
+}
+
+#app :is(button, .cutter-landing__button):hover:not(:disabled),
+body > .global-nav.global-nav button:hover {
+  background-color: var(--button-hover);
+  border-color: var(--button-hover-border);
+  color: var(--button-ink);
+}
+
+body > .global-nav.global-nav button:hover {
+  background-color: var(--button-hover) !important;
+}
+
+#app
+  :is(
+    button,
+    .cutter-landing__button,
+    .dropzone,
+    .field-input,
+    .field-select,
+    input[type='range']
+  ):focus-visible,
+body > .global-nav.global-nav button:focus-visible {
+  outline: 2px solid var(--cutter-button-focus);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+#app button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+#app button.export-btn,
+#app .cutter-landing__button {
+  min-height: 40px;
+  padding: 8px 19px;
+  line-height: 1.2;
+}
+
+#app :is(.btn-history, .close-btn, .transport-btn) {
+  min-width: 36px;
+  min-height: 36px;
+}
+
+#app :is(.upload-btn, .dropzone).dragging {
+  background-color: var(--ds-accent-soft);
+  border-color: var(--cutter-button-gold);
+}
+
+#app .dropzone {
+  background: var(--cutter-panel);
+  border-radius: 15px;
+}
+
+#app .dropzone:hover:not(.dragging) {
+  border-color: var(--cutter-button-focus);
+}
+
+#app .dropzone-link {
+  color: var(--cutter-button-focus);
+}
+
+#app :is(.field-input, .field-select) {
+  min-height: 36px;
+  border-radius: var(--cutter-button-radius);
+  background: var(--cutter-button-fill);
+}
+
+#app input[type='range'] {
+  accent-color: var(--cutter-button-gold);
+}
+
+#app :is(.volume-control, .modal-content) {
+  border-radius: 15px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #app :is(button, .cutter-landing__button) {
+    transition: none;
+  }
+}
