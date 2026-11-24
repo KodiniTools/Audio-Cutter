@@ -8,6 +8,7 @@ import { mountGlobalPartials } from './partials'
 import { useSettingsStore } from './stores/settings'
 import './style.css'
 import './assets/kodini-stage1.css'
+import './assets/kodini-stage2.css'
 
 // Erkannte Sprache <html lang> setzen UND in beide localStorage-Keys
 // schreiben (still), damit die gleich eingehaengte globale Nav dieselbe

@@ -1,0 +1,207 @@
+/* Globale Navigation des Audio-Schneiders. Das Partial liefert das Markup und die Interaktionen. */
+:root {
+  --cutter-nav-height: 71px;
+}
+
+body > .global-nav.global-nav {
+  --cutter-nav-panel: var(--ds-surface-1);
+  --cutter-nav-line: var(--ds-border-strong);
+  --cutter-nav-cyan: #82d4ed;
+  --cutter-nav-gold: #e0b06a;
+  --nav-text: var(--ds-text);
+  --nav-text-hover: var(--ds-text);
+  --nav-bg-hover: var(--ds-surface-2);
+  --nav-border: var(--cutter-nav-line);
+  --accent-color: var(--cutter-nav-gold);
+  background-color: var(--cutter-nav-panel) !important;
+  background-image: linear-gradient(110deg, transparent 35%, #3c98b91a);
+  border-bottom-color: var(--cutter-nav-line);
+  box-shadow: none;
+  transition: none;
+}
+
+:root[data-theme='light'] body > .global-nav.global-nav {
+  --cutter-nav-cyan: #175a77;
+  --cutter-nav-gold: #795416;
+}
+
+.global-nav .global-nav-container {
+  max-width: 1228px;
+  height: calc(var(--cutter-nav-height) - 1px);
+  padding-inline: var(--ds-gutter);
+  gap: 12px;
+}
+
+body > .global-nav .global-nav-brand {
+  flex-shrink: 0;
+  font-weight: 400;
+  font-size: clamp(1.1rem, 2vw, 1.35rem);
+  color: var(--ds-text);
+}
+
+body > .global-nav .global-nav-brand:hover {
+  transform: none;
+  color: var(--cutter-nav-cyan);
+}
+
+.global-nav .brand-logo-icon {
+  width: 32px;
+  height: 32px;
+}
+
+body > .global-nav.global-nav :is(.global-nav-link, .global-nav-dropdown-toggle, .global-nav-dropdown-item) {
+  color: var(--ds-text);
+  font-weight: 400;
+  transition: color var(--ds-duration), background-color var(--ds-duration);
+}
+
+body > .global-nav :is(.global-nav-link, .global-nav-dropdown-toggle):hover,
+body > .global-nav .global-nav-dropdown-toggle[aria-expanded='true'],
+body > .global-nav .global-nav-dropdown-item:hover {
+  background-color: var(--ds-surface-2) !important;
+  color: var(--cutter-nav-cyan);
+  box-shadow: none;
+  transform: none;
+}
+
+body > .global-nav .global-nav-dropdown-item:hover {
+  padding-inline-start: 20px;
+}
+
+body > .global-nav .global-nav-dropdown .global-nav-dropdown-menu {
+  background-color: var(--cutter-nav-panel) !important;
+  border: 1px solid var(--cutter-nav-line);
+  box-shadow: var(--ds-shadow-overlay);
+  backdrop-filter: none;
+  transition: none;
+}
+
+body > .global-nav .global-nav-controls {
+  flex-shrink: 0;
+}
+
+body > .global-nav :is(.global-nav-theme-toggle, .global-nav-lang-switcher, .global-nav-hamburger) {
+  border: 1px solid var(--cutter-nav-line);
+  border-radius: var(--ds-radius-md);
+  background-color: var(--ds-surface-2) !important;
+  color: var(--ds-text);
+}
+
+body > .global-nav .global-nav-theme-toggle {
+  width: 44px;
+  height: 44px;
+}
+
+body > .global-nav .global-nav-theme-toggle:hover {
+  border-color: var(--cutter-nav-cyan);
+  box-shadow: none;
+}
+
+body > .global-nav .global-nav-lang-btn.active {
+  background-color: var(--ds-accent) !important;
+  color: var(--ac-on-accent-strong);
+}
+
+body > .global-nav :is(a, button):focus-visible {
+  outline: 2px solid var(--cutter-nav-cyan);
+  outline-offset: -2px;
+}
+
+#app .app-page .app-container {
+  --workspace-top: var(--cutter-nav-height);
+}
+
+.cutter-landing #funktionen {
+  scroll-margin-top: calc(var(--cutter-nav-height) + 16px);
+}
+
+@media (min-width: 769px) {
+  body > .global-nav .global-nav-links {
+    gap: 2px;
+  }
+
+  body > .global-nav :is(.global-nav-link, .global-nav-dropdown-toggle) {
+    padding-inline: clamp(6px, 1vw, 16px);
+  }
+
+  /* Die Kopfzeile klebt am oberen Rand. Menüs öffnen darunter und scrollen intern. */
+  body > .global-nav .global-nav-dropdown .global-nav-dropdown-menu {
+    top: 100%;
+    bottom: auto;
+    max-height: min(400px, calc(100dvh - var(--cutter-nav-height) - 12px));
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --cutter-nav-height: 61px;
+  }
+
+  .global-nav .global-nav-container {
+    padding-inline: 16px;
+  }
+
+  body > .global-nav .global-nav-links {
+    background-color: var(--cutter-nav-panel) !important;
+    border-bottom: 1px solid var(--cutter-nav-line);
+    max-height: calc(100dvh - var(--cutter-nav-height));
+    box-shadow: var(--ds-shadow-overlay);
+  }
+
+  body > .global-nav .global-nav-controls-desktop {
+    display: none;
+  }
+
+  body > .global-nav .global-nav-controls-mobile {
+    display: flex;
+    padding-top: 0;
+    border-top: 0;
+    margin: 8px auto 0;
+  }
+
+  body > .global-nav .global-nav-dropdown .global-nav-dropdown-menu {
+    top: auto;
+    bottom: auto;
+    box-shadow: none;
+  }
+
+  body > .global-nav .global-nav-dropdown-item:hover {
+    padding-inline-start: 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body > .global-nav *,
+  body > .global-nav *::before,
+  body > .global-nav *::after {
+    transition: none !important;
+  }
+}
+
+/* Rücklink vom Editor zur Landingpage (oben in der Sidebar) */
+#app .app-page .cutter-home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  align-self: flex-start;
+  min-height: 32px;
+  margin: 0 0 var(--ds-space-3);
+  padding: 0 var(--ds-space-3);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-2);
+  color: var(--ds-text);
+  font-size: var(--ds-text-sm);
+  text-decoration: none;
+  transition: border-color var(--ds-duration), color var(--ds-duration);
+}
+
+#app .app-page .cutter-home-link:hover {
+  border-color: var(--cutter-heading-accent);
+  color: var(--ds-text);
+}
+
+#app .app-page .cutter-home-link:focus-visible {
+  outline: 2px solid var(--cutter-heading-accent);
+  outline-offset: 2px;
+}

@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
+import { RouterLink } from 'vue-router'
 import { useAudioCutterStore } from '../stores/audioCutter'
 import { useAudioEngine, type RegionPlayer } from '../composables/useAudioEngine'
 import { detectWebCodecsFormats } from '../composables/useWebCodecsEncoder'
@@ -17,7 +18,7 @@ import ProgressOverlay from '../components/ProgressOverlay.vue'
 import ShortcutsHelp from '../components/ShortcutsHelp.vue'
 import VolumeControl from '../components/VolumeControl.vue'
 
-const { t, te } = useI18n({ useScope: 'global' })
+const { t, te, locale } = useI18n({ useScope: 'global' })
 const store = useAudioCutterStore()
 const { meta, decoded, region, hasAudio, mode, exportOptions, gain } = storeToRefs(store)
 const engine = useAudioEngine()
@@ -316,9 +317,7 @@ async function onSendTo(target: ShareTarget): Promise<void> {
   sendingTo.value = target
   store.setError(null)
   try {
-    let file = store.result
-      ? { name: store.result.filename, blob: store.result.blob }
-      : null
+    let file = store.result ? { name: store.result.filename, blob: store.result.blob } : null
     if (!file) {
       const wav = await engine.encode(
         decoded.value,
@@ -598,6 +597,9 @@ onBeforeUnmount(() => {
     <div class="app-container">
       <!-- Linke Sidebar (Workspace-Shell): Datei, Schnitt, Export -->
       <aside class="sidebar">
+        <RouterLink class="cutter-home-link" :to="{ name: 'landing', query: { lang: locale } }">
+          <span aria-hidden="true">←</span> {{ t('app.home') }}
+        </RouterLink>
         <div class="panel-header">
           <h1 class="panel-title">
             {{ t('app.title') }} <span class="panel-badge">{{ t('app.badge') }}</span>
@@ -659,23 +661,52 @@ onBeforeUnmount(() => {
               class="pointer-events-none absolute inset-0 z-40 overflow-hidden rounded-md border border-dashed border-accent bg-surface-1"
             >
               <!-- Auswahl-Stil: accent-soft über der deckenden Panel-Fläche -->
-              <div class="flex h-full w-full flex-col items-center justify-center gap-2 bg-accent-soft text-ink">
-                <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0L8 8m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+              <div
+                class="flex h-full w-full flex-col items-center justify-center gap-2 bg-accent-soft text-ink"
+              >
+                <svg
+                  class="h-10 w-10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 16V4m0 0L8 8m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
+                  />
                 </svg>
                 <span class="text-sm font-medium">{{ t('dropzone.replaceHint') }}</span>
               </div>
             </div>
 
-            <div class="workspace-card flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
+            <div
+              class="workspace-card flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm"
+            >
               <span class="truncate font-semibold text-ink">{{ meta?.name }}</span>
               <span class="font-mono text-xs text-ink-3">
                 {{ meta?.sampleRate }} Hz · {{ meta?.numberOfChannels }} {{ t('meta.channels') }} ·
                 {{ formatMs(meta?.durationMs ?? 0) }}
               </span>
-              <button class="btn-history btn-danger" :title="t('meta.changeFile')" @click="changeFile">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7" />
+              <button
+                class="btn-history btn-danger"
+                :title="t('meta.changeFile')"
+                @click="changeFile"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7"
+                  />
                 </svg>
                 {{ t('meta.changeFile') }}
               </button>
@@ -763,11 +794,7 @@ onBeforeUnmount(() => {
               </div>
 
               <!-- Lautstärke: Hinweis auf Übernahme beim Schneiden bzw. Übersteuerung -->
-              <p
-                v-if="store.clipping"
-                class="volume-hint volume-hint--warn"
-                role="status"
-              >
+              <p v-if="store.clipping" class="volume-hint volume-hint--warn" role="status">
                 {{ t('volume.clipping') }}
               </p>
               <p v-else-if="store.volume !== 100" class="volume-hint" role="status">
@@ -781,7 +808,9 @@ onBeforeUnmount(() => {
               >
                 <span class="text-ink-2">
                   {{ t('player.cursorAt') }}
-                  <span class="font-mono font-semibold text-ink">{{ formatMs(cursorMs ?? 0) }}</span>
+                  <span class="font-mono font-semibold text-ink">{{
+                    formatMs(cursorMs ?? 0)
+                  }}</span>
                 </span>
                 <button class="btn-history" @click="applyCursorAsStart">
                   {{ t('player.setStart') }}
