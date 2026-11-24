@@ -37,3 +37,28 @@ export function computePeaks(channel: Float32Array, width: number): Peak[] {
   }
   return peaks
 }
+
+/** Anteil der halben Canvas-Höhe, den der lauteste Ausschlag füllt. */
+const DISPLAY_HEADROOM = 0.92
+/** Obergrenze der Anzeige-Verstärkung, damit fast stille Dateien kein Rauschen aufblähen. */
+const MAX_DISPLAY_GAIN = 12
+
+/** Größter Betrag im Kanal (0 bei leeren Daten; NaN/Infinity werden ignoriert). */
+export function peakAmplitude(channel: Float32Array): number {
+  let peak = 0
+  for (let i = 0; i < channel.length; i++) {
+    const v = Math.abs(channel[i])
+    if (v > peak && Number.isFinite(v)) peak = v
+  }
+  return peak
+}
+
+/**
+ * Verstärkung nur für die Darstellung: skaliert die Wellenform so, dass der
+ * lauteste Ausschlag der ganzen Datei die Canvas-Höhe fast ausfüllt. Das Audio
+ * selbst bleibt unverändert. Leise Dateien wirken dadurch nicht mehr schmal.
+ */
+export function displayGain(peak: number): number {
+  if (!Number.isFinite(peak) || peak <= 0) return 1
+  return Math.min(MAX_DISPLAY_GAIN, DISPLAY_HEADROOM / peak)
+}

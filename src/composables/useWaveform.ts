@@ -2,7 +2,7 @@
 // Zeichnet Waveform + Auswahlbereich + Playhead auf ein Canvas.
 // Peak-Berechnung liegt in ../utils/waveform (testbar).
 
-import { computePeaks } from '../utils/waveform'
+import { computePeaks, displayGain, peakAmplitude } from '../utils/waveform'
 
 export interface WaveformDrawOptions {
   /** Auswahl in Sekundenanteil [0..1] der Gesamtlänge. */
@@ -27,6 +27,18 @@ export interface WaveformDrawOptions {
 }
 
 export function useWaveform() {
+  // Anzeige-Verstärkung je Kanal merken: der Spitzenwert der ganzen Datei wird
+  // nur einmal berechnet und bleibt beim Zoomen gleich (kein Springen).
+  const gainCache = new WeakMap<Float32Array, number>()
+  function gainFor(channel: Float32Array): number {
+    let gain = gainCache.get(channel)
+    if (gain === undefined) {
+      gain = displayGain(peakAmplitude(channel))
+      gainCache.set(channel, gain)
+    }
+    return gain
+  }
+
   function draw(
     canvas: HTMLCanvasElement,
     channel: Float32Array | null,
@@ -37,7 +49,10 @@ export function useWaveform() {
     const cssHeight = canvas.clientHeight || 160
 
     // HiDPI-scharf zeichnen.
-    if (canvas.width !== Math.round(cssWidth * dpr) || canvas.height !== Math.round(cssHeight * dpr)) {
+    if (
+      canvas.width !== Math.round(cssWidth * dpr) ||
+      canvas.height !== Math.round(cssHeight * dpr)
+    ) {
       canvas.width = Math.round(cssWidth * dpr)
       canvas.height = Math.round(cssHeight * dpr)
     }
@@ -74,13 +89,14 @@ export function useWaveform() {
       const to = Math.min(channel.length, Math.ceil(viewEnd * channel.length))
       const slice = to > from ? channel.subarray(from, to) : channel
       const peaks = computePeaks(slice, w)
+      const gain = gainFor(channel)
       ctx.strokeStyle = opts.colors.waveform
       ctx.lineWidth = 1
       ctx.beginPath()
       for (let x = 0; x < peaks.length; x++) {
         const { min, max } = peaks[x]
-        const yMax = mid - max * mid
-        const yMin = mid - min * mid
+        const yMax = Math.max(0, mid - max * gain * mid)
+        const yMin = Math.min(h, mid - min * gain * mid)
         ctx.moveTo(x + 0.5, yMax)
         ctx.lineTo(x + 0.5, yMin)
       }
