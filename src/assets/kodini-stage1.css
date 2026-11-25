@@ -138,12 +138,12 @@
 
 .cutter-landing__button--primary {
   border-color: transparent;
-  background: var(--cutter-accent-fill);
+  background: var(--cutter-accent-fill) var(--cutter-button-gold-grad);
   color: var(--cutter-on-accent-fill);
 }
 
 .cutter-landing__button--primary:hover {
-  background: var(--cutter-accent-fill-hover);
+  background: var(--cutter-accent-fill-hover) var(--cutter-button-gold-grad-hover);
   color: var(--cutter-on-accent-fill);
 }
 

@@ -9,6 +9,9 @@
   --cutter-button-gold: #8f6320;
   --cutter-button-gold-hover: #7d561c;
   --cutter-button-gold-ink: #fff;
+  /* Verlauf nach Equalizer-19-Muster; oberster Stopp #9c6c26 hat 4,58:1 zu Weiß. */
+  --cutter-button-gold-grad: linear-gradient(180deg, #9c6c26 0%, #7a5218 45%, #4a2f0a 100%);
+  --cutter-button-gold-grad-hover: linear-gradient(180deg, #8c5f1f 0%, #6a4614 45%, #402908 100%);
 }
 
 :root[data-theme='light'] {
@@ -47,10 +50,19 @@ body > .global-nav.global-nav .global-nav-lang-btn.active {
   --button-hover-border: transparent;
   color: var(--button-ink);
   font-weight: 500;
+  background-image: var(--cutter-button-gold-grad);
+}
+
+#app
+  :is(.cutter-landing__button--primary, .export-btn-primary, .transport-btn--primary):hover:not(
+    :disabled
+  ) {
+  background-image: var(--cutter-button-gold-grad-hover);
 }
 
 body > .global-nav.global-nav .global-nav-lang-btn.active {
   background-color: var(--button-fill) !important;
+  background-image: var(--cutter-button-gold-grad) !important;
 }
 
 /* style.css erzwingt für alle Elemente der Navigation
@@ -62,6 +74,7 @@ body > .global-nav:not(#app):not(#modal-portal) .global-nav-lang-btn.active {
 
 body > .global-nav.global-nav .global-nav-lang-btn.active:hover {
   background-color: var(--button-hover) !important;
+  background-image: var(--cutter-button-gold-grad-hover) !important;
 }
 
 #app :is(.export-btn-danger, .btn-danger) {
