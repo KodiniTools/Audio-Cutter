@@ -20,7 +20,8 @@ export default {
     open: 'Audio-Schneider öffnen',
     featuresLink: 'Funktionen ansehen',
     trust: ['Ohne Anmeldung', 'Lokale Verarbeitung im Browser'],
-    imageAlt: 'Audio-Wellenform mit gold markiertem Schnittbereich zwischen Start- und Endmarke',
+    imageAlt:
+      'Tonstudio mit Mischpult: Der mittlere Bildschirm zeigt eine Wellenform mit gold markiertem Schnittbereich zwischen Start- und Endmarke',
     featureTitle: 'Vom Audiotrack zum fertigen Schnitt',
     features: [
       [
