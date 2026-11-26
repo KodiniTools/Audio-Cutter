@@ -10,6 +10,14 @@ import heroImage from '../assets/audio-schneider-hero.webp'
 const { locale, t } = useI18n()
 const editorLink = computed(() => ({ name: 'cutter', query: { lang: locale.value } }))
 const features = [0, 1, 2] as const
+
+// Titel zweifarbig: erstes Wort inkl. Trennzeichen gold, Rest blau
+// ("Audio-" + "Schneider", "Audio " + "Cutter").
+const titleParts = computed(() => {
+  const title = t('app.title')
+  const match = /^(\S+?[-\s])(\S.*)$/.exec(title)
+  return match ? { lead: match[1], rest: match[2] } : { lead: '', rest: title }
+})
 </script>
 
 <template>
@@ -18,7 +26,10 @@ const features = [0, 1, 2] as const
       <div class="cutter-landing__container">
         <div class="cutter-landing__content">
           <p class="cutter-landing__category">{{ t('landing.category') }}</p>
-          <h1>{{ t('app.title') }}</h1>
+          <h1>
+            <span class="cutter-landing__title-lead">{{ titleParts.lead }}</span
+            ><span class="cutter-landing__title-rest">{{ titleParts.rest }}</span>
+          </h1>
           <p class="cutter-landing__lead">{{ t('landing.description') }}</p>
           <div class="cutter-landing__actions">
             <RouterLink

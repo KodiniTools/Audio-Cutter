@@ -328,3 +328,22 @@
     transition: none;
   }
 }
+
+/* === Zweifarbiger Titel: „Audio-“ gold, „Schneider“ blau (Logo-Blau) === */
+.cutter-landing {
+  --cutter-title-gold: #e6bc76;
+  --cutter-title-blue: #48a0d8;
+}
+
+:is(:root[data-theme='light'], .light-theme) .cutter-landing {
+  --cutter-title-gold: #775115;
+  --cutter-title-blue: #0058a0;
+}
+
+.cutter-landing h1 .cutter-landing__title-lead {
+  color: var(--cutter-title-gold);
+}
+
+.cutter-landing h1 .cutter-landing__title-rest {
+  color: var(--cutter-title-blue);
+}
