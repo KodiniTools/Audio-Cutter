@@ -20,7 +20,8 @@ const en: MessageSchema = {
     open: 'Open Audio Cutter',
     featuresLink: 'Explore features',
     trust: ['No sign-up', 'Local processing in your browser'],
-    imageAlt: 'Audio waveform with a region marked in gold between the start and end points',
+    imageAlt:
+      'Recording studio with a mixing console: the centre screen shows a waveform with a region marked in gold between the start and end points',
     featureTitle: 'From audio track to finished cut',
     features: [
       [
